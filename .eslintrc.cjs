@@ -19,7 +19,7 @@ module.exports = {
   rules: {
     quotes: ['error', 'single', { avoidEscape: true }],
     'comma-dangle': [
-      'error,
+      'error',
       {
         arrays: 'always-multiline',
         objects: 'always-multiline',
