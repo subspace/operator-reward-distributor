@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 config();
 
 import { createServer } from 'http';
-import { loadConfig } from './config';
+import { loadConfig } from './config.js';
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 
