@@ -1,0 +1,16 @@
+import { config } from 'dotenv';
+config();
+
+import { createServer } from 'http';
+
+const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+
+const server = createServer((_, res) => {
+  res.writeHead(200, { 'content-type': 'text/plain' });
+  res.end('operator-reward-distributor running');
+});
+
+server.listen(port, () => {
+  // eslint-disable-next-line no-console
+  console.log();
+});

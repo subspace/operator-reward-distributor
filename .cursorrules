@@ -1,0 +1,45 @@
+# Cursor Rules for TypeScript Projects
+
+## General Guidelines
+
+- Use TypeScript for all new files
+- Prefer yarn over npm for package management
+- Disable Yarn PnP - use node_modules for package management
+- Use arrow functions instead of function declarations
+- Prioritize immutability and functional programming patterns
+- Avoid classes; use functional programming patterns instead
+- Use strict TypeScript configuration
+
+## Code Style
+
+- Use 2 spaces for indentation
+- Use single quotes for strings
+- Add trailing commas in multiline objects/arrays
+- Use const assertions and as const where appropriate
+- Prefer interface over type for object shapes
+- Use meaningful variable and function names
+
+## File Organization
+
+- Use kebab-case for file names
+- Group related files in folders
+- Keep modules small and focused
+- Separate business logic from presentation logic
+
+## Import/Export
+
+- Use named exports over default exports
+- Group imports: external libraries, internal modules, relative imports
+- Use absolute imports with path mapping when configured
+
+## Error Handling
+
+- Handle async operations with proper error states
+- Use TypeScript's strict null checks
+- Implement proper error handling patterns
+
+## Performance
+
+- Lazy load modules when appropriate
+- Optimize bundle size with tree shaking
+- Use profiling tools to identify bottlenecks
