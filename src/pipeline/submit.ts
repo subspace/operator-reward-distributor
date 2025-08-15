@@ -12,7 +12,7 @@ export const submitForPeriod = async (periodId: number): Promise<void> => {
   const { extrinsic, payload, tipValue } = composeRemarkWithTip(
     api,
     periodId,
-    cfg.ORD_TIP_SHANNONS.toString()
+    cfg.ORD_TIP_SHANNONS
   );
 
   const signer = getSigner();
