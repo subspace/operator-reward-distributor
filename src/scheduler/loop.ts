@@ -1,6 +1,7 @@
 import { getApi } from '../chain/api.js';
 import { loadConfig } from '../config.js';
 import { reserveEmissionIfNeeded } from '../db/emissions.js';
+import { logger } from '../logger.js';
 import { submitForPeriod } from '../pipeline/submit.js';
 
 import { computePeriodId, getOnChainTimestampMs } from './period.js';
@@ -17,14 +18,14 @@ export const runScheduler = async (): Promise<void> => {
       const periodId = computePeriodId(tsMs, cfg.ORD_INTERVAL_SECONDS);
       const reserved = reserveEmissionIfNeeded(periodId);
       if (reserved) {
-        console.log('[schedule] reserved period', periodId);
+        logger.info({ periodId }, 'reserved period');
         // fire-and-forget submission with error handling; internal retries happen downstream if needed
         submitForPeriod(periodId).catch((e) => {
-          console.error('[schedule] submission error', e);
+          logger.error({ err: e, periodId }, 'submission error');
         });
       }
     } catch (e) {
-      console.error('[schedule] error', e);
+      logger.error({ err: e }, 'scheduler error');
     }
     await sleep(1000);
   }
