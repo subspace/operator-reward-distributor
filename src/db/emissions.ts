@@ -36,3 +36,17 @@ export const reserveEmissionIfNeeded = (periodId: number): boolean => {
 
   return result.changes === 1;
 };
+
+export const updateSubmitted = (
+  periodId: number,
+  fields: { extrinsic_hash: string; remark_payload: string }
+): void => {
+  const cfg = loadConfig();
+  const db = getDb();
+  const stmt = (db as Database.Database).prepare(
+    `UPDATE emissions
+     SET status='submitted', emitted_at=datetime('now'), extrinsic_hash=@extrinsic_hash, remark_payload=@remark_payload
+     WHERE chain_id=@chain_id AND period_id=@period_id`
+  );
+  stmt.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, ...fields });
+};

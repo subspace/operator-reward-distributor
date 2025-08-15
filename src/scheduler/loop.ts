@@ -1,6 +1,7 @@
 import { getApi } from '../chain/api.js';
 import { loadConfig } from '../config.js';
 import { reserveEmissionIfNeeded } from '../db/emissions.js';
+import { submitForPeriod } from '../pipeline/submit.js';
 
 import { computePeriodId, getOnChainTimestampMs } from './period.js';
 
@@ -17,6 +18,8 @@ export const runScheduler = async (): Promise<void> => {
       const reserved = reserveEmissionIfNeeded(periodId);
       if (reserved) {
         console.log('[schedule] reserved period', periodId);
+        // fire-and-forget submission; internal retries happen downstream if needed
+        void submitForPeriod(periodId);
       }
     } catch (e) {
       console.error('[schedule] error', e);
