@@ -10,6 +10,8 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
     "health": "tsx src/cli/health.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "migrate": "tsx src/db/migrate.ts && echo 'Migrations complete'"
   },
   "engines": {
@@ -23,6 +25,7 @@
     "@types/node": "^24.2.1",
     "@typescript-eslint/eslint-plugin": "^8.39.1",
     "@typescript-eslint/parser": "^8.39.1",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -31,7 +34,8 @@
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.4",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@polkadot/api": "^16.4.4",
