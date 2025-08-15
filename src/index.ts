@@ -5,6 +5,7 @@ config();
 
 import { loadConfig } from './config.js';
 import { runMigrations } from './db/migrate.js';
+import { runScheduler } from './scheduler/loop.js';
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 
@@ -19,4 +20,8 @@ const server = createServer((_, res) => {
 
 server.listen(port, () => {
   console.log('[boot] listening on', port, 'chain', cfg.ORD_CHAIN_ID);
+  // start scheduler in background
+  runScheduler().catch((e) => {
+    console.error('[boot] scheduler error', e);
+  });
 });

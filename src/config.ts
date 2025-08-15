@@ -1,14 +1,30 @@
 import { config as loadEnv } from 'dotenv';
 import { z } from 'zod';
 
+import { parseShannons } from './utils/amounts.js';
+
 loadEnv();
 
 const schema = z.object({
   ORD_CHAIN_WS: z.string().url(),
   ORD_CHAIN_ID: z.string().min(1),
   ORD_INTERVAL_SECONDS: z.coerce.number().int().positive(),
-  ORD_TIP_SHANNONS: z.coerce.bigint().refine((v) => v > 0n, 'must be > 0'),
-  ORD_DAILY_CAP_SHANNONS: z.coerce.bigint().refine((v) => v > 0n, 'must be > 0'),
+  ORD_TIP_SHANNONS: z.string().transform((s, ctx) => {
+    try {
+      return parseShannons(s);
+    } catch (e) {
+      ctx.addIssue({ code: 'custom', message: (e as Error).message });
+      return z.NEVER;
+    }
+  }),
+  ORD_DAILY_CAP_SHANNONS: z.string().transform((s, ctx) => {
+    try {
+      return parseShannons(s);
+    } catch (e) {
+      ctx.addIssue({ code: 'custom', message: (e as Error).message });
+      return z.NEVER;
+    }
+  }),
   ORD_MAX_RETRIES: z.coerce.number().int().min(0).default(5),
   ORD_MORTALITY_BLOCKS: z.coerce.number().int().min(1).default(64),
   ORD_CONFIRMATIONS: z.coerce.number().int().min(1).default(10),

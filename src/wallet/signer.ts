@@ -1,0 +1,10 @@
+import { Keyring } from '@polkadot/keyring';
+
+import { loadConfig } from '../config.js';
+
+export const getSigner = () => {
+  const cfg = loadConfig();
+  const keyring = new Keyring({ type: 'sr25519' });
+  const pair = keyring.addFromUri(cfg.ORD_ACCOUNT_MNEMONIC);
+  return pair;
+};
