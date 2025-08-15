@@ -21,5 +21,7 @@ const server = createServer((_, res) => {
 server.listen(port, () => {
   console.log('[boot] listening on', port, 'chain', cfg.ORD_CHAIN_ID);
   // start scheduler in background
-  void runScheduler();
+  runScheduler().catch((e) => {
+    console.error('[boot] scheduler error', e);
+  });
 });

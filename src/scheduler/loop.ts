@@ -18,8 +18,10 @@ export const runScheduler = async (): Promise<void> => {
       const reserved = reserveEmissionIfNeeded(periodId);
       if (reserved) {
         console.log('[schedule] reserved period', periodId);
-        // fire-and-forget submission; internal retries happen downstream if needed
-        void submitForPeriod(periodId);
+        // fire-and-forget submission with error handling; internal retries happen downstream if needed
+        submitForPeriod(periodId).catch((e) => {
+          console.error('[schedule] submission error', e);
+        });
       }
     } catch (e) {
       console.error('[schedule] error', e);
