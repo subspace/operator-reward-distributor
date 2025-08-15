@@ -5,6 +5,8 @@ import { composeRemarkWithTip } from '../tx/compose.js';
 import { signAndSendWithTip } from '../tx/send.js';
 import { getSigner } from '../wallet/signer.js';
 
+import { trackConfirmation } from './confirm.js';
+
 export const submitForPeriod = async (periodId: number): Promise<void> => {
   const cfg = loadConfig();
   const api = await getApi();
@@ -16,10 +18,18 @@ export const submitForPeriod = async (periodId: number): Promise<void> => {
   );
 
   const signer = getSigner();
-  const { extrinsicHash } = await signAndSendWithTip(extrinsic, signer, tipValue);
+  const { extrinsicHash, blockNumber, blockHash } = await signAndSendWithTip(
+    api,
+    extrinsic,
+    signer,
+    tipValue
+  );
 
   updateSubmitted(periodId, {
     extrinsic_hash: extrinsicHash,
     remark_payload: JSON.stringify(payload),
   });
+
+  // Track inclusion/confirmation depth; best-effort in background
+  void trackConfirmation(periodId, blockHash, blockNumber);
 };

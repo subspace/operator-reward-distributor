@@ -50,3 +50,31 @@ export const updateSubmitted = (
   );
   stmt.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, ...fields });
 };
+
+export const updateInclusion = (
+  periodId: number,
+  fields: { block_hash: string; block_number: number }
+): void => {
+  const cfg = loadConfig();
+  const db = getDb();
+  const stmt = (db as Database.Database).prepare(
+    `UPDATE emissions
+     SET block_hash=@block_hash, block_number=@block_number
+     WHERE chain_id=@chain_id AND period_id=@period_id`
+  );
+  stmt.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, ...fields });
+};
+
+export const updateConfirmed = (
+  periodId: number,
+  fields: { confirmation_depth: number; block_author: string | null }
+): void => {
+  const cfg = loadConfig();
+  const db = getDb();
+  const stmt = (db as Database.Database).prepare(
+    `UPDATE emissions
+     SET status='confirmed', confirmed_at=datetime('now'), confirmation_depth=@confirmation_depth, block_author=@block_author
+     WHERE chain_id=@chain_id AND period_id=@period_id`
+  );
+  stmt.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, ...fields });
+};
