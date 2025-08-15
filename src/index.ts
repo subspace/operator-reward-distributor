@@ -1,11 +1,14 @@
 import { createServer } from 'http';
 
 import { config } from 'dotenv';
-
 config();
+
 import { loadConfig } from './config.js';
+import { runMigrations } from './db/migrate.js';
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+
+runMigrations();
 
 const cfg = loadConfig();
 
