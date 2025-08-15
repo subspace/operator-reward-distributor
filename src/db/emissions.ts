@@ -78,3 +78,25 @@ export const updateConfirmed = (
   );
   stmt.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, ...fields });
 };
+
+export const recordSkipped = (periodId: number, status: 'skipped_budget' | 'paused'): void => {
+  const cfg = loadConfig();
+  const db = getDb();
+  const insert = (db as Database.Database).prepare(
+    `INSERT OR IGNORE INTO emissions (
+      chain_id, period_id, scheduled_at, remark_payload, tip_shannons, status
+    ) VALUES (
+      @chain_id, @period_id, datetime('now'), '', @tip_shannons, @status
+    )`
+  );
+  insert.run({
+    chain_id: cfg.ORD_CHAIN_ID,
+    period_id: periodId,
+    tip_shannons: cfg.ORD_TIP_SHANNONS.toString(),
+    status,
+  });
+  const update = (db as Database.Database).prepare(
+    `UPDATE emissions SET status=@status WHERE chain_id=@chain_id AND period_id=@period_id`
+  );
+  update.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, status });
+};
