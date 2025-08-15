@@ -1,7 +1,8 @@
-import { config } from 'dotenv';
-config();
-
 import { createServer } from 'http';
+
+import { config } from 'dotenv';
+
+config();
 import { loadConfig } from './config.js';
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -14,6 +15,5 @@ const server = createServer((_, res) => {
 });
 
 server.listen(port, () => {
-  // eslint-disable-next-line no-console
   console.log('[boot] listening on', port, 'chain', cfg.ORD_CHAIN_ID);
 });

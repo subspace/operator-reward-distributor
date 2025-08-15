@@ -286,7 +286,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint/js@npm:9.33.0":
+"@eslint/js@npm:9.33.0, @eslint/js@npm:^9.33.0":
   version: 9.33.0
   resolution: "@eslint/js@npm:9.33.0"
   checksum: 10c0/4c42c9abde76a183b8e47205fd6c3116b058f82f07b6ad4de40de56cdb30a36e9ecd40efbea1b63a84d08c206aadbb0aa39a890197e1ad6455a8e542df98f186
@@ -2616,6 +2616,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"globals@npm:^16.3.0":
+  version: 16.3.0
+  resolution: "globals@npm:16.3.0"
+  checksum: 10c0/c62dc20357d1c0bf2be4545d6c4141265d1a229bf1c3294955efb5b5ef611145391895e3f2729f8603809e81b30b516c33e6c2597573844449978606aad6eb38
+  languageName: node
+  linkType: hard
+
 "globalthis@npm:^1.0.4":
   version: 1.0.4
   resolution: "globalthis@npm:1.0.4"
@@ -3487,6 +3494,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "operator-reward-distributor@workspace:."
   dependencies:
+    "@eslint/js": "npm:^9.33.0"
     "@polkadot/api": "npm:^16.4.4"
     "@polkadot/keyring": "npm:^13.5.5"
     "@polkadot/util": "npm:^13.5.5"
@@ -3500,6 +3508,7 @@ __metadata:
     eslint-config-prettier: "npm:^10.1.8"
     eslint-import-resolver-typescript: "npm:^4.4.4"
     eslint-plugin-import: "npm:^2.32.0"
+    globals: "npm:^16.3.0"
     prettier: "npm:^3.6.2"
     ts-node: "npm:^10.9.2"
     tsx: "npm:^4.20.4"

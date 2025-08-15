@@ -27,9 +27,7 @@ export interface AppConfig extends z.infer<typeof schema> {
 export const loadConfig = (): AppConfig => {
   const parsed = schema.safeParse(process.env);
   if (!parsed.success) {
-    const issues = parsed.error.issues
-      .map((i) => `${i.path.join('.')}: ${i.message}`)
-      .join('; ');
+    const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid configuration: ${issues}`);
   }
   const env = parsed.data;
@@ -41,5 +39,3 @@ export const loadConfig = (): AppConfig => {
     .filter(Boolean);
   return { ...env, rpcEndpoints };
 };
-
-

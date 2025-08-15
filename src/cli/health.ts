@@ -6,7 +6,6 @@ const main = async (): Promise<void> => {
   const info = await getChainInfo(api);
   const head = await api.rpc.chain.getHeader();
 
-  // eslint-disable-next-line no-console
   console.log(
     JSON.stringify(
       {
@@ -25,7 +24,6 @@ const main = async (): Promise<void> => {
 };
 
 main().catch((err) => {
-  // eslint-disable-next-line no-console
   console.error(err);
   process.exit(1);
 });
