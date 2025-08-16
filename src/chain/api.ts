@@ -1,6 +1,7 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 
 import { loadConfig } from '../config.js';
+import { logger } from '../logger.js';
 
 let apiInstance: ApiPromise | null = null;
 
@@ -13,19 +14,19 @@ export const getApi = async (): Promise<ApiPromise> => {
   const provider = new WsProvider(cfg.rpcEndpoints);
 
   provider.on('connected', () => {
-    console.log('[chain] connected');
+    logger.info({ endpoints: cfg.rpcEndpoints }, 'chain connected');
   });
   provider.on('disconnected', () => {
-    console.log('[chain] disconnected');
+    logger.warn('chain disconnected');
   });
   provider.on('error', (err) => {
-    console.error('[chain] provider error', err);
+    logger.error({ err }, 'chain provider error');
   });
 
   apiInstance = await ApiPromise.create({ provider });
   await apiInstance.isReady;
 
-  console.log('[chain] api ready');
+  logger.info('chain api ready');
 
   return apiInstance;
 };

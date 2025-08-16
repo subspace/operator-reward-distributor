@@ -5,5 +5,5 @@ export const computePeriodId = (onChainTimestampMs: number, intervalSeconds: num
 
 export const getOnChainTimestampMs = async (api: ApiPromise): Promise<number> => {
   const now = await api.query.timestamp.now();
-  return now.toNumber();
+  return Number(now.toString());
 };
