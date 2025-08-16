@@ -28,8 +28,8 @@ export const checkBudget = (): BudgetCheck => {
     .get(cfg.ORD_CHAIN_ID, since) as { spent: number };
 
   const spentToday = BigInt(row.spent);
-  const cap = cfg.ORD_DAILY_CAP_SHANNONS as unknown as bigint;
-  if (spentToday + (cfg.ORD_TIP_SHANNONS as unknown as bigint) > cap) {
+  const cap = cfg.ORD_DAILY_CAP_SHANNONS;
+  if (spentToday + cfg.ORD_TIP_SHANNONS > cap) {
     return { ok: false, reason: 'over_daily_cap', spentToday };
   }
   return { ok: true, spentToday };
