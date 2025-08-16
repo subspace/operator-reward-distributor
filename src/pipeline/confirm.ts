@@ -17,22 +17,31 @@ export const trackConfirmation = async (
   });
 
   return new Promise<void>((resolve, reject) => {
-    const unsubPromise = api.rpc.chain.subscribeNewHeads(async (lastHeader) => {
-      try {
-        const depth = lastHeader.number.toNumber() - inclusionNumber;
-        if (depth >= cfg.ORD_CONFIRMATIONS) {
-          const author = await getBlockAuthor(api, inclusionHash);
-          updateConfirmed(periodId, {
-            confirmation_depth: depth,
-            block_author: author,
-          });
-          (await unsubPromise)();
-          resolve();
+    let unsubscribe: (() => void) | null = null;
+    api.rpc.chain
+      .subscribeNewHeads(async (lastHeader) => {
+        try {
+          const depth = lastHeader.number.toNumber() - inclusionNumber;
+          if (depth >= cfg.ORD_CONFIRMATIONS) {
+            const author = await getBlockAuthor(api, inclusionHash);
+            updateConfirmed(periodId, {
+              confirmation_depth: depth,
+              block_author: author,
+            });
+            if (unsubscribe) unsubscribe();
+            resolve();
+          }
+        } catch (e) {
+          if (unsubscribe) unsubscribe();
+          reject(e);
         }
-      } catch (e) {
-        (await unsubPromise)();
+      })
+      .then((unsub) => {
+        unsubscribe = unsub;
+      })
+      .catch((e) => {
+        if (unsubscribe) unsubscribe();
         reject(e);
-      }
-    });
+      });
   });
 };
