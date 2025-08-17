@@ -22,7 +22,7 @@ export const trackConfirmation = async (
       .subscribeNewHeads(async (lastHeader) => {
         try {
           const depth = lastHeader.number.toNumber() - inclusionNumber;
-          if (depth >= cfg.ORD_CONFIRMATIONS) {
+          if (depth >= cfg.CONFIRMATIONS) {
             const author = await getBlockAuthor(api, inclusionHash);
             updateConfirmed(periodId, {
               confirmation_depth: depth,

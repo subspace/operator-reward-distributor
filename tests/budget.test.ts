@@ -21,10 +21,10 @@ describe('budget rules', () => {
   it('blocks when paused', async () => {
     vi.doMock('../src/config.js', () => ({
       loadConfig: () => ({
-        ORD_CHAIN_ID: 'test',
-        ORD_TIP_SHANNONS: 1n,
-        ORD_DAILY_CAP_SHANNONS: 10n,
-        ORD_PAUSED: true,
+        CHAIN_ID: 'test',
+        TIP_SHANNONS: 1n,
+        DAILY_CAP_SHANNONS: 10n,
+        PAUSED: true,
       }),
     }));
     const { checkBudget: cb } = await import('../src/budget/rules.js');
@@ -36,10 +36,10 @@ describe('budget rules', () => {
   it('allows under cap and blocks over cap', async () => {
     vi.doMock('../src/config.js', () => ({
       loadConfig: () => ({
-        ORD_CHAIN_ID: 'test',
-        ORD_TIP_SHANNONS: 4n,
-        ORD_DAILY_CAP_SHANNONS: 10n,
-        ORD_PAUSED: false,
+        CHAIN_ID: 'test',
+        TIP_SHANNONS: 4n,
+        DAILY_CAP_SHANNONS: 10n,
+        PAUSED: false,
       }),
     }));
     const { checkBudget: cb } = await import('../src/budget/rules.js');

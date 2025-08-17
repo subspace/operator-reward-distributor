@@ -15,7 +15,7 @@ yarn install
 
 ```bash
 cp .env.example .env
-# edit .env and set ORD_ACCOUNT_MNEMONIC (and other values as needed)
+# edit .env and set ACCOUNT_MNEMONIC (and other values as needed)
 ```
 
 3. Initialize database

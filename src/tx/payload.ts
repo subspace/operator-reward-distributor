@@ -24,9 +24,9 @@ export interface RemarkPayloadV1 {
 /** Build a v1 remark payload for a given period. */
 export const buildRemarkV1 = (periodId: number): RemarkPayloadV1 => {
   const cfg = loadConfig();
-  const tip = cfg.ORD_TIP_SHANNONS.toString();
+  const tip = cfg.TIP_SHANNONS.toString();
   // Preimage uses a fixed nonce '0' to allow future extensions without changing field layout.
-  const preimage = `${cfg.ORD_CHAIN_ID}|${periodId}|${tip}|0`;
+  const preimage = `${cfg.CHAIN_ID}|${periodId}|${tip}|0`;
   const digest = createHash('sha256').update(preimage).digest('hex');
   return {
     version: 'ORD:v1',

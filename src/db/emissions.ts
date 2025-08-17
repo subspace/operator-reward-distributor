@@ -28,10 +28,10 @@ export const reserveEmissionIfNeeded = (periodId: number): boolean => {
 
   const stmt = (db as Database.Database).prepare(insertSql);
   const result = stmt.run({
-    chain_id: cfg.ORD_CHAIN_ID,
+    chain_id: cfg.CHAIN_ID,
     period_id: periodId,
     remark_payload: '',
-    tip_shannons: cfg.ORD_TIP_SHANNONS.toString(),
+    tip_shannons: cfg.TIP_SHANNONS.toString(),
   });
 
   return result.changes === 1;
@@ -48,7 +48,7 @@ export const updateSubmitted = (
      SET status='submitted', emitted_at=datetime('now'), extrinsic_hash=@extrinsic_hash, remark_payload=@remark_payload
      WHERE chain_id=@chain_id AND period_id=@period_id`
   );
-  stmt.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, ...fields });
+  stmt.run({ chain_id: cfg.CHAIN_ID, period_id: periodId, ...fields });
 };
 
 export const updateInclusion = (
@@ -62,7 +62,7 @@ export const updateInclusion = (
      SET block_hash=@block_hash, block_number=@block_number
      WHERE chain_id=@chain_id AND period_id=@period_id`
   );
-  stmt.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, ...fields });
+  stmt.run({ chain_id: cfg.CHAIN_ID, period_id: periodId, ...fields });
 };
 
 export const updateConfirmed = (
@@ -76,7 +76,7 @@ export const updateConfirmed = (
      SET status='confirmed', confirmed_at=datetime('now'), confirmation_depth=@confirmation_depth, block_author=@block_author
      WHERE chain_id=@chain_id AND period_id=@period_id`
   );
-  stmt.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, ...fields });
+  stmt.run({ chain_id: cfg.CHAIN_ID, period_id: periodId, ...fields });
 };
 
 export const recordSkipped = (periodId: number, status: 'skipped_budget' | 'paused'): void => {
@@ -90,13 +90,13 @@ export const recordSkipped = (periodId: number, status: 'skipped_budget' | 'paus
     )`
   );
   insert.run({
-    chain_id: cfg.ORD_CHAIN_ID,
+    chain_id: cfg.CHAIN_ID,
     period_id: periodId,
-    tip_shannons: cfg.ORD_TIP_SHANNONS.toString(),
+    tip_shannons: cfg.TIP_SHANNONS.toString(),
     status,
   });
   const update = (db as Database.Database).prepare(
     `UPDATE emissions SET status=@status WHERE chain_id=@chain_id AND period_id=@period_id`
   );
-  update.run({ chain_id: cfg.ORD_CHAIN_ID, period_id: periodId, status });
+  update.run({ chain_id: cfg.CHAIN_ID, period_id: periodId, status });
 };

@@ -4,8 +4,8 @@ import { buildRemarkV1, serializeRemark } from '../src/tx/payload.js';
 
 vi.mock('../src/config.js', () => ({
   loadConfig: () => ({
-    ORD_TIP_SHANNONS: 1000000000000000000n,
-    ORD_CHAIN_ID: '0x1234567890abcdef',
+    TIP_SHANNONS: 1000000000000000000n,
+    CHAIN_ID: '0x1234567890abcdef',
   }),
 }));
 

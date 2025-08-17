@@ -20,7 +20,7 @@ const server = createServer((_, res) => {
 });
 
 server.listen(port, () => {
-  logger.info({ port, chainId: cfg.ORD_CHAIN_ID }, 'booted');
+  logger.info({ port, chainId: cfg.CHAIN_ID }, 'booted');
   // start scheduler in background
   runScheduler().catch((e) => {
     logger.error({ err: e }, 'scheduler error');

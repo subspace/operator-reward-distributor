@@ -21,11 +21,7 @@ export const submitForPeriod = async (periodId: number): Promise<void> => {
     return;
   }
 
-  const { extrinsic, payload, tipValue } = composeRemarkWithTip(
-    api,
-    periodId,
-    cfg.ORD_TIP_SHANNONS
-  );
+  const { extrinsic, payload, tipValue } = composeRemarkWithTip(api, periodId, cfg.TIP_SHANNONS);
 
   const signer = getSigner();
   const { extrinsicHash, blockNumber, blockHash } = await signAndSendWithTip(
