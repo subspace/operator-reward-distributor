@@ -117,7 +117,7 @@ export const getSpentShannonsSince = (chainId: string, sinceIso: string): bigint
        FROM emissions
        WHERE chain_id = ?
          AND status IN ('submitted','confirmed')
-         AND scheduled_at >= ?`
+         AND emitted_at >= datetime(?)`
     )
     .get(chainId, sinceIso) as { spent: number };
   return BigInt(row.spent);

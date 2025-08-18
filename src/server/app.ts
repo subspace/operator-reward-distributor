@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 
+import { checkBudget } from '../budget/rules.js';
 import { getApi } from '../chain/api.js';
 import { getChainInfo } from '../chain/info.js';
 import { loadConfig } from '../config.js';
@@ -142,6 +143,38 @@ export const start = async () => {
       return { ok: false, error: { code: 'not_found', message: 'emission not found' } };
     }
     return { ok: true, data: { ...row, tip_ai3: formatShannonsToAi3(row.tip_shannons) } };
+  });
+
+  app.get('/budget', async () => {
+    const cfg = loadConfig();
+    const budget = checkBudget();
+    const spentShannons = (budget.spentToday ?? 0n).toString();
+    const tipShannons = cfg.TIP_SHANNONS.toString();
+    const capShannons = cfg.DAILY_CAP_SHANNONS.toString();
+    const spentBig = BigInt(spentShannons);
+    const capBig = BigInt(capShannons);
+    const remainingBig = capBig > spentBig ? capBig - spentBig : 0n;
+    const now = new Date();
+    const endUtc = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999)
+    );
+    const secondsUntilReset = Math.max(0, Math.floor((endUtc.getTime() - now.getTime()) / 1000));
+    return {
+      ok: true,
+      data: {
+        ok: budget.ok,
+        reason: budget.reason ?? null,
+        spentTodayShannons: spentShannons,
+        spentTodayAi3: formatShannonsToAi3(spentShannons),
+        tipShannons,
+        tipAi3: formatShannonsToAi3(tipShannons),
+        dailyCapShannons: capShannons,
+        dailyCapAi3: formatShannonsToAi3(capShannons),
+        remainingShannons: remainingBig.toString(),
+        remainingAi3: formatShannonsToAi3(remainingBig.toString()),
+        secondsUntilReset,
+      },
+    };
   });
 
   const port = loadConfig().SERVER_PORT;
