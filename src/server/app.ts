@@ -3,8 +3,10 @@ import Fastify from 'fastify';
 import { getApi } from '../chain/api.js';
 import { getChainInfo } from '../chain/info.js';
 import { loadConfig } from '../config.js';
+import { getEmissionByPeriod, listEmissions } from '../db/queries.js';
 import { logger as pinoLogger } from '../logger.js';
 import { computePeriodId, getOnChainTimestampMs } from '../scheduler/period.js';
+import { formatShannonsToAi3 } from '../utils/amounts.js';
 
 const buildApp = () => Fastify({ logger: true });
 
@@ -103,6 +105,43 @@ export const start = async () => {
         intervalSeconds: cfg.INTERVAL_SECONDS,
       },
     };
+  });
+
+  app.get('/emissions', async (request) => {
+    const url = new URL(request.url, 'http://localhost');
+    const status = url.searchParams.get('status') as
+      | 'scheduled'
+      | 'submitted'
+      | 'confirmed'
+      | 'failed'
+      | 'skipped_budget'
+      | null;
+    const periodFrom = url.searchParams.get('periodFrom');
+    const periodTo = url.searchParams.get('periodTo');
+    const limit = url.searchParams.get('limit');
+    const offset = url.searchParams.get('offset');
+    const rows = listEmissions({
+      status: status ?? undefined,
+      periodFrom: periodFrom ? Number(periodFrom) : undefined,
+      periodTo: periodTo ? Number(periodTo) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      offset: offset ? Number(offset) : undefined,
+    });
+    const mapped = rows.map((r) => ({
+      ...r,
+      tip_ai3: formatShannonsToAi3(r.tip_shannons),
+    }));
+    return { ok: true, data: mapped };
+  });
+
+  app.get('/emissions/:periodId', async (request, reply) => {
+    const { periodId } = request.params as { periodId: string };
+    const row = getEmissionByPeriod(Number(periodId));
+    if (!row) {
+      reply.code(404);
+      return { ok: false, error: { code: 'not_found', message: 'emission not found' } };
+    }
+    return { ok: true, data: { ...row, tip_ai3: formatShannonsToAi3(row.tip_shannons) } };
   });
 
   const port = loadConfig().SERVER_PORT;
