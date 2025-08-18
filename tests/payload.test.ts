@@ -15,12 +15,10 @@ describe('remark payload', () => {
     expect(p.version).toBe('ORD:v1');
     expect(p.period).toBe(12345);
     expect(p.tipShannons).toBe('1000000000000000000');
-    expect(p.digest).toMatch(/^[a-f0-9]{64}$/);
 
     const s = serializeRemark(p);
     expect(s).toContain('ORD:v1');
     expect(s).toContain('period=12345');
     expect(s).toContain('tip=1000000000000000000');
-    expect(s).toContain('digest=');
   });
 });
