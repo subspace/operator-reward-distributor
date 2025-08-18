@@ -14,7 +14,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:import/recommended',
     'plugin:import/typescript',
-    'prettier'
+    'prettier',
   ],
   rules: {
     quotes: ['error', 'single', { avoidEscape: true }],
@@ -29,6 +29,6 @@ module.exports = {
       },
     ],
     'import/order': ['error', { 'newlines-between': 'always', alphabetize: { order: 'asc' } }],
-    'no-console': 'off'
-  }
+    'no-console': 'off',
+  },
 };

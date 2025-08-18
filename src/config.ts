@@ -1,42 +1,54 @@
 import { config as loadEnv } from 'dotenv';
 import { z } from 'zod';
 
-import { parseShannons } from './utils/amounts.js';
+import { parseAi3ToShannons } from './utils/amounts.js';
 
 loadEnv();
 
 const schema = z.object({
-  ORD_CHAIN_WS: z.string().url(),
-  ORD_CHAIN_ID: z.string().min(1),
-  ORD_INTERVAL_SECONDS: z.coerce.number().int().positive(),
-  ORD_TIP_SHANNONS: z.string().transform((s, ctx) => {
+  CHAIN_WS: z.string().url(),
+  CHAIN_ID: z.string().min(1),
+  INTERVAL_SECONDS: z.coerce.number().int().positive(),
+  TIP_AI3: z.string().transform((s, ctx) => {
     try {
-      return parseShannons(s);
+      return parseAi3ToShannons(s);
     } catch (e) {
       ctx.addIssue({ code: 'custom', message: (e as Error).message });
       return z.NEVER;
     }
   }),
-  ORD_DAILY_CAP_SHANNONS: z.string().transform((s, ctx) => {
+  DAILY_CAP_AI3: z.string().transform((s, ctx) => {
     try {
-      return parseShannons(s);
+      return parseAi3ToShannons(s);
     } catch (e) {
       ctx.addIssue({ code: 'custom', message: (e as Error).message });
       return z.NEVER;
     }
   }),
-  ORD_MAX_RETRIES: z.coerce.number().int().min(0).default(5),
-  ORD_MORTALITY_BLOCKS: z.coerce.number().int().min(1).default(64),
-  ORD_CONFIRMATIONS: z.coerce.number().int().min(1).default(10),
-  ORD_RPC_FALLBACKS: z.string().optional(),
-  ORD_ACCOUNT_MNEMONIC: z.string().min(1),
-  ORD_DB_URL: z.string().min(1).default('sqlite:./ord.sqlite'),
-  ORD_MODE: z.enum(['A']).default('A'),
-  ORD_PAUSED: z.coerce.boolean().default(false),
-  ORD_DRY_RUN: z.coerce.boolean().default(false),
+  MAX_RETRIES: z.coerce.number().int().min(0).default(5),
+  MORTALITY_BLOCKS: z.coerce.number().int().min(1).default(64),
+  CONFIRMATIONS: z.coerce.number().int().min(1).default(10),
+  RPC_FALLBACKS: z.string().optional(),
+  ACCOUNT_PRIVATE_KEY: z
+    .string()
+    .regex(/^0x[0-9a-fA-F]{64}$/i, 'ACCOUNT_PRIVATE_KEY must be 0x-prefixed 32-byte hex'),
+  DB_URL: z.string().min(1).default('sqlite:./ord.sqlite'),
+  DRY_RUN: z.coerce.boolean().default(false),
 });
 
-export interface AppConfig extends z.infer<typeof schema> {
+export interface AppConfig {
+  CHAIN_WS: string;
+  CHAIN_ID: string;
+  INTERVAL_SECONDS: number;
+  TIP_SHANNONS: bigint;
+  DAILY_CAP_SHANNONS: bigint;
+  MAX_RETRIES: number;
+  MORTALITY_BLOCKS: number;
+  CONFIRMATIONS: number;
+  RPC_FALLBACKS?: string;
+  ACCOUNT_PRIVATE_KEY: string;
+  DB_URL: string;
+  DRY_RUN: boolean;
   rpcEndpoints: string[];
 }
 
@@ -46,12 +58,24 @@ export const loadConfig = (): AppConfig => {
     const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid configuration: ${issues}`);
   }
-  const env = parsed.data;
-  const rpcEndpoints = [
-    env.ORD_CHAIN_WS,
-    ...(env.ORD_RPC_FALLBACKS ? env.ORD_RPC_FALLBACKS.split(',') : []),
-  ]
+  const env = parsed.data as any;
+  const rpcEndpoints = [env.CHAIN_WS, ...(env.RPC_FALLBACKS ? env.RPC_FALLBACKS.split(',') : [])]
     .map((s) => s.trim())
     .filter(Boolean);
-  return { ...env, rpcEndpoints };
+  const cfg: AppConfig = {
+    CHAIN_WS: env.CHAIN_WS,
+    CHAIN_ID: env.CHAIN_ID,
+    INTERVAL_SECONDS: env.INTERVAL_SECONDS,
+    TIP_SHANNONS: env.TIP_AI3,
+    DAILY_CAP_SHANNONS: env.DAILY_CAP_AI3,
+    MAX_RETRIES: env.MAX_RETRIES,
+    MORTALITY_BLOCKS: env.MORTALITY_BLOCKS,
+    CONFIRMATIONS: env.CONFIRMATIONS,
+    RPC_FALLBACKS: env.RPC_FALLBACKS,
+    ACCOUNT_PRIVATE_KEY: env.ACCOUNT_PRIVATE_KEY,
+    DB_URL: env.DB_URL,
+    DRY_RUN: env.DRY_RUN,
+    rpcEndpoints,
+  };
+  return cfg;
 };

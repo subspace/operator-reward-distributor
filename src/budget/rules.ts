@@ -6,13 +6,12 @@ const startOfUtcDay = (d: Date): Date =>
 
 export interface BudgetCheck {
   ok: boolean;
-  reason?: 'paused' | 'over_daily_cap';
+  reason?: 'over_daily_cap';
   spentToday?: bigint;
 }
 
 export const checkBudget = (): BudgetCheck => {
   const cfg = loadConfig();
-  if (cfg.ORD_PAUSED) return { ok: false, reason: 'paused' };
 
   const db = getDb();
   const since = startOfUtcDay(new Date()).toISOString();
@@ -25,11 +24,11 @@ export const checkBudget = (): BudgetCheck => {
          AND status IN ('submitted','confirmed')
          AND scheduled_at >= ?`
     )
-    .get(cfg.ORD_CHAIN_ID, since) as { spent: number };
+    .get(cfg.CHAIN_ID, since) as { spent: number };
 
   const spentToday = BigInt(row.spent);
-  const cap = cfg.ORD_DAILY_CAP_SHANNONS;
-  if (spentToday + cfg.ORD_TIP_SHANNONS > cap) {
+  const cap = cfg.DAILY_CAP_SHANNONS;
+  if (spentToday + cfg.TIP_SHANNONS > cap) {
     return { ok: false, reason: 'over_daily_cap', spentToday };
   }
   return { ok: true, spentToday };

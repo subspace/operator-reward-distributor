@@ -11,7 +11,14 @@ export const logger = pino({
       }
     : undefined,
   redact: {
-    paths: ['ORD_ACCOUNT_MNEMONIC', 'mnemonic', 'seed', 'password'],
+    paths: [
+      'ACCOUNT_MNEMONIC',
+      'mnemonic',
+      'seed',
+      'password',
+      'ACCOUNT_PRIVATE_KEY',
+      'privateKey',
+    ],
     censor: '[redacted]',
   },
 });

@@ -1,10 +1,12 @@
 import { Keyring } from '@polkadot/keyring';
 
 import { loadConfig } from '../config.js';
+import { logger } from '../logger.js';
 
 export const getSigner = () => {
   const cfg = loadConfig();
-  const keyring = new Keyring({ type: 'sr25519' });
-  const pair = keyring.addFromUri(cfg.ORD_ACCOUNT_MNEMONIC);
+  const keyring = new Keyring({ type: 'ethereum' });
+  const pair = keyring.addFromUri(cfg.ACCOUNT_PRIVATE_KEY);
+  logger.info({ address: pair.address }, 'address');
   return pair;
 };

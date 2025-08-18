@@ -10,12 +10,12 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
 
 export const runScheduler = async (): Promise<void> => {
   const cfg = loadConfig();
-  const api = await getApi();
 
   while (true) {
     try {
+      const api = await getApi();
       const tsMs = await getOnChainTimestampMs(api);
-      const periodId = computePeriodId(tsMs, cfg.ORD_INTERVAL_SECONDS);
+      const periodId = computePeriodId(tsMs, cfg.INTERVAL_SECONDS);
       const reserved = reserveEmissionIfNeeded(periodId);
       if (reserved) {
         logger.info({ periodId }, 'reserved period');

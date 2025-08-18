@@ -4,7 +4,7 @@ import { reserveEmissionIfNeeded, updateSubmitted } from '../src/db/emissions.js
 
 // Mock config to isolate DB keying and amounts
 vi.mock('../src/config.js', () => ({
-  loadConfig: () => ({ ORD_CHAIN_ID: 'test-chain', ORD_TIP_SHANNONS: 1_000_000_000_000_000_000n }),
+  loadConfig: () => ({ CHAIN_ID: 'test-chain', TIP_SHANNONS: 1_000_000_000_000_000_000n }),
 }));
 
 // Use a temporary sqlite file per test process

@@ -11,3 +11,7 @@ dist
 .DS_Store
 .idea
 .vscode
+
+#database
+*.sqlite
+*.sqlite-*

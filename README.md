@@ -1,6 +1,22 @@
 # Operator Reward Distributor
 
-Service to periodically submit `system.remark` extrinsics with a tip on Autonomys Network Auto-EVM(AI3) to incentivize network operators.
+A reliable service that regularly sends an on‑chain remark with a tip on Autonomys Network (Auto‑EVM / AI3). The tip rewards the operators who include it, helping continuously incentivize network operators without changing any protocol rules.
+
+### Why this exists
+
+At mainnet launch, operator fees earned from regular network activity may not be sufficient to incentivize existing AI3 holders to nominate operators or to run operators themselves. Over time, operators should be able to self‑sustain from transaction fees. While the ecosystem is bootstrapping, it can make sense to subsidize operator earnings with rewards funded by the foundation. This service provides a straightforward, transparent way to distribute such rewards on‑chain.
+
+### What it does
+
+- Sends a transaction at a steady cadence (every N seconds) with a tip attached.
+- Tips go to whoever includes the transaction in a block (i.e., active operators).
+- Uses a on‑chain note (remark) that takes up minimal execution time and block space
+
+### What you need
+
+- Node.js 20+ and Yarn.
+- A funded account’s private key (0x‑prefixed, 32‑byte hex) to sign the transactions.
+- A WebSocket endpoint for the network (you can list backups/fallbacks).
 
 ## Getting started
 
@@ -11,12 +27,19 @@ corepack enable
 yarn install
 ```
 
-2. Configure env
+2. Configure environment
 
 ```bash
 cp .env.example .env
-# edit .env and set ORD_ACCOUNT_MNEMONIC (and other values as needed)
+# edit .env and set ACCOUNT_PRIVATE_KEY (and other values as needed)
 ```
+
+What you typically configure:
+
+- Network address and optional fallbacks (the service will try the next if one is down)
+- How often to send (interval), how much to tip, and your daily tip budget
+- How many confirmations to wait before considering a transaction final
+- Where to store the local database and whether to run in dry‑run mode
 
 3. Initialize database
 
