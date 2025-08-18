@@ -23,7 +23,6 @@ export const trackConfirmation = async (
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   // wait loop
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       const api = await getApi();
