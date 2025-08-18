@@ -46,17 +46,36 @@ export const listEmissions = (query: ListEmissionsQuery = {}): EmissionRow[] => 
     where.push('status = @status');
     params.status = query.status;
   }
-  if (typeof query.periodFrom === 'number') {
+  if (
+    typeof query.periodFrom === 'number' &&
+    Number.isFinite(query.periodFrom) &&
+    Number.isInteger(query.periodFrom)
+  ) {
     where.push('period_id >= @periodFrom');
     params.periodFrom = query.periodFrom;
   }
-  if (typeof query.periodTo === 'number') {
+  if (
+    typeof query.periodTo === 'number' &&
+    Number.isFinite(query.periodTo) &&
+    Number.isInteger(query.periodTo)
+  ) {
     where.push('period_id <= @periodTo');
     params.periodTo = query.periodTo;
   }
 
-  const limit = Math.min(Math.max(query.limit ?? 50, 1), 500);
-  const offset = Math.max(query.offset ?? 0, 0);
+  const limitRaw =
+    typeof query.limit === 'number' && Number.isFinite(query.limit) && Number.isInteger(query.limit)
+      ? query.limit
+      : undefined;
+  const offsetRaw =
+    typeof query.offset === 'number' &&
+    Number.isFinite(query.offset) &&
+    Number.isInteger(query.offset)
+      ? query.offset
+      : undefined;
+
+  const limit = Math.min(Math.max(limitRaw ?? 50, 1), 500);
+  const offset = Math.max(offsetRaw ?? 0, 0);
 
   const orderBy = (() => {
     switch (query.orderBy) {

@@ -25,6 +25,14 @@ const probeScheduler = async (): Promise<boolean> => {
   }
 };
 
+const toInt = (s: string | null, opts: { min?: number; max?: number } = {}): number | undefined => {
+  if (!s || !/^\d+$/u.test(s)) return undefined;
+  let n = Number(s);
+  if (typeof opts.min === 'number' && n < opts.min) n = opts.min;
+  if (typeof opts.max === 'number' && n > opts.max) n = opts.max;
+  return n;
+};
+
 export const start = async () => {
   const app = buildApp();
 
@@ -110,33 +118,45 @@ export const start = async () => {
 
   app.get('/emissions', async (request) => {
     const url = new URL(request.url, 'http://localhost');
-    const status = url.searchParams.get('status') as
-      | 'scheduled'
-      | 'submitted'
-      | 'confirmed'
-      | 'failed'
-      | 'skipped_budget'
-      | null;
-    const periodFrom = url.searchParams.get('periodFrom');
-    const periodTo = url.searchParams.get('periodTo');
-    const limit = url.searchParams.get('limit');
-    const offset = url.searchParams.get('offset');
-    const orderBy = url.searchParams.get('order_by') as
-      | 'period_id_asc'
-      | 'period_id_desc'
-      | 'emitted_at_asc'
-      | 'emitted_at_desc'
-      | 'scheduled_at_asc'
-      | 'scheduled_at_desc'
-      | null;
-    const rows = listEmissions({
-      status: status ?? undefined,
-      periodFrom: periodFrom ? Number(periodFrom) : undefined,
-      periodTo: periodTo ? Number(periodTo) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      offset: offset ? Number(offset) : undefined,
-      orderBy: orderBy ?? undefined,
-    });
+
+    const allowedStatuses = new Set([
+      'scheduled',
+      'submitted',
+      'confirmed',
+      'failed',
+      'skipped_budget',
+    ] as const);
+    const allowedOrderBy = new Set([
+      'period_id_asc',
+      'period_id_desc',
+      'emitted_at_asc',
+      'emitted_at_desc',
+      'scheduled_at_asc',
+      'scheduled_at_desc',
+    ] as const);
+
+    const statusRaw = url.searchParams.get('status');
+    const status = allowedStatuses.has(statusRaw as any)
+      ? (statusRaw as 'scheduled' | 'submitted' | 'confirmed' | 'failed' | 'skipped_budget')
+      : undefined;
+
+    const periodFrom = toInt(url.searchParams.get('periodFrom'), { min: 0 });
+    const periodTo = toInt(url.searchParams.get('periodTo'), { min: 0 });
+    const limit = toInt(url.searchParams.get('limit'), { min: 1, max: 500 });
+    const offset = toInt(url.searchParams.get('offset'), { min: 0 });
+
+    const orderByRaw = url.searchParams.get('order_by');
+    const orderBy = allowedOrderBy.has(orderByRaw as any)
+      ? (orderByRaw as
+          | 'period_id_asc'
+          | 'period_id_desc'
+          | 'emitted_at_asc'
+          | 'emitted_at_desc'
+          | 'scheduled_at_asc'
+          | 'scheduled_at_desc')
+      : undefined;
+
+    const rows = listEmissions({ status, periodFrom, periodTo, limit, offset, orderBy });
     const mapped = rows.map((r) => ({
       ...r,
       tip_ai3: formatShannonsToAi3(r.tip_shannons),
@@ -146,7 +166,15 @@ export const start = async () => {
 
   app.get('/emissions/:periodId', async (request, reply) => {
     const { periodId } = request.params as { periodId: string };
-    const row = getEmissionByPeriod(Number(periodId));
+    const id = toInt(periodId, { min: 0 });
+    if (id === undefined) {
+      reply.code(400);
+      return {
+        ok: false,
+        error: { code: 'bad_request', message: 'periodId must be a non-negative integer' },
+      };
+    }
+    const row = getEmissionByPeriod(id);
     if (!row) {
       reply.code(404);
       return { ok: false, error: { code: 'not_found', message: 'emission not found' } };
