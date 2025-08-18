@@ -1,16 +1,16 @@
 # Operator Reward Distributor
 
-A reliable service that regularly sends an on‑chain remark with a tip on Autonomys Network (Auto‑EVM / AI3). The tip rewards the operators who include it, helping continuously incentivize network operators without changing any protocol rules.
+A reliable service that regularly sends an on‑chain remark with a tip on Autonomys Network (Auto‑EVM). The tip rewards the operators who include the transaction in a block, helping continuously incentivize network operators without changing any protocol rules.
 
 ### Why this exists
 
-At mainnet launch, operator fees earned from regular network activity may not be sufficient to incentivize existing AI3 holders to nominate operators or to run operators themselves. Over time, operators should be able to self‑sustain from transaction fees. While the ecosystem is bootstrapping, it can make sense to subsidize operator earnings with rewards funded by the foundation. This service provides a straightforward, transparent way to distribute such rewards on‑chain.
+At mainnet launch, operator fees earned from regular network activity may not be sufficient to incentivize existing AI3 holders to nominate operators or to run operators themselves. Over time, operators should be able to self‑sustain from transaction fees, but while the ecosystem is bootstrapping, it makes sense to subsidize operator earnings with rewards. This service provides a straightforward, transparent way to distribute such rewards on‑chain.
 
 ### What it does
 
 - Sends a transaction at a steady cadence (every N seconds) with a tip attached.
 - Tips go to whoever includes the transaction in a block (i.e., active operators).
-- Uses a on‑chain note (remark) that takes up minimal execution time and block space
+- Uses a on‑chain remark that takes up minimal execution time and block space
 
 ### What you need
 
