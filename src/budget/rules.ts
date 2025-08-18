@@ -6,13 +6,12 @@ const startOfUtcDay = (d: Date): Date =>
 
 export interface BudgetCheck {
   ok: boolean;
-  reason?: 'paused' | 'over_daily_cap';
+  reason?: 'over_daily_cap';
   spentToday?: bigint;
 }
 
 export const checkBudget = (): BudgetCheck => {
   const cfg = loadConfig();
-  if (cfg.PAUSED) return { ok: false, reason: 'paused' };
 
   const db = getDb();
   const since = startOfUtcDay(new Date()).toISOString();

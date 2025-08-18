@@ -11,7 +11,7 @@ export interface EmissionRecord {
   scheduled_at?: string;
   remark_payload: string;
   tip_shannons: string;
-  status: 'scheduled' | 'submitted' | 'confirmed' | 'failed' | 'skipped_budget' | 'paused';
+  status: 'scheduled' | 'submitted' | 'confirmed' | 'failed' | 'skipped_budget';
 }
 
 export const reserveEmissionIfNeeded = (periodId: number): boolean => {
@@ -76,7 +76,7 @@ export const updateConfirmed = (periodId: number, fields: { confirmation_depth: 
   stmt.run({ chain_id: cfg.CHAIN_ID, period_id: periodId, ...fields });
 };
 
-export const recordSkipped = (periodId: number, status: 'skipped_budget' | 'paused'): void => {
+export const recordSkipped = (periodId: number, status: 'skipped_budget'): void => {
   const cfg = loadConfig();
   const db = getDb();
   const insert = (db as Database.Database).prepare(
@@ -96,4 +96,15 @@ export const recordSkipped = (periodId: number, status: 'skipped_budget' | 'paus
     `UPDATE emissions SET status=@status WHERE chain_id=@chain_id AND period_id=@period_id`
   );
   update.run({ chain_id: cfg.CHAIN_ID, period_id: periodId, status });
+};
+
+export const updateFailed = (periodId: number): void => {
+  const cfg = loadConfig();
+  const db = getDb();
+  const stmt = (db as Database.Database).prepare(
+    `UPDATE emissions
+     SET status='failed'
+     WHERE chain_id=@chain_id AND period_id=@period_id`
+  );
+  stmt.run({ chain_id: cfg.CHAIN_ID, period_id: periodId });
 };

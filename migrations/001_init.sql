@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS emissions (
   confirmation_depth INTEGER,
   confirmed_at TEXT,
   status TEXT NOT NULL CHECK (status IN (
-    'scheduled','submitted','confirmed','failed','skipped_budget','paused'
+    'scheduled','submitted','confirmed','failed','skipped_budget'
   )),
   UNIQUE(chain_id, period_id)
 );

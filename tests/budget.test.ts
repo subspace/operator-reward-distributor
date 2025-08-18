@@ -18,21 +18,6 @@ describe('budget rules', () => {
     vi.resetModules();
   });
 
-  it('blocks when paused', async () => {
-    vi.doMock('../src/config.js', () => ({
-      loadConfig: () => ({
-        CHAIN_ID: 'test',
-        TIP_SHANNONS: 1n,
-        DAILY_CAP_SHANNONS: 10n,
-        PAUSED: true,
-      }),
-    }));
-    const { checkBudget: cb } = await import('../src/budget/rules.js');
-    const r = cb();
-    expect(r.ok).toBe(false);
-    expect(r.reason).toBe('paused');
-  });
-
   it('allows under cap and blocks over cap', async () => {
     vi.doMock('../src/config.js', () => ({
       loadConfig: () => ({
