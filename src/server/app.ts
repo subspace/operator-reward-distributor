@@ -79,7 +79,6 @@ export const start = async () => {
         confirmations: cfg.CONFIRMATIONS,
         mortalityBlocks: cfg.MORTALITY_BLOCKS,
         maxRetries: cfg.MAX_RETRIES,
-        dryRun: cfg.DRY_RUN,
         rpcEndpoints: cfg.rpcEndpoints,
       },
     };
