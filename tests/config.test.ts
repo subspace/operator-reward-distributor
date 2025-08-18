@@ -18,7 +18,6 @@ describe('config amounts are bigint', () => {
     process.env.ACCOUNT_PRIVATE_KEY =
       '0x1111111111111111111111111111111111111111111111111111111111111111';
     process.env.DB_URL = 'sqlite:./:memory:';
-    process.env.DRY_RUN = 'true';
   });
 
   afterEach(() => {

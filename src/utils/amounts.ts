@@ -29,3 +29,20 @@ export const parseAi3ToShannons = (value: string): bigint => {
   if (result > U128_MAX) throw new Error('Amount exceeds u128 max');
   return result;
 };
+
+/**
+ * Convert a shannons amount (u128) to an AI3 decimal string with up to 18 fractional digits.
+ * Examples:
+ *  - 1 -> '0.000000000000000001'
+ *  - 1000000000000000000 -> '1'
+ *  - 1234500000000000000 -> '1.2345'
+ */
+export const formatShannonsToAi3 = (value: string | bigint): string => {
+  const n = typeof value === 'bigint' ? value : BigInt(value);
+  const intPart = n / AI3_SCALE;
+  const fracPart = n % AI3_SCALE;
+  if (fracPart === 0n) return intPart.toString(10);
+  const fracStrPadded = (AI3_SCALE + fracPart).toString(10).slice(1); // 18 digits
+  const fracTrimmed = fracStrPadded.replace(/0+$/u, '');
+  return `${intPart.toString(10)}.${fracTrimmed}`;
+};

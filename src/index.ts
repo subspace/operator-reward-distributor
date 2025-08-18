@@ -8,7 +8,7 @@ import { runMigrations } from './db/migrate.js';
 import { logger } from './logger.js';
 import { runScheduler } from './scheduler/loop.js';
 
-const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+const port = loadConfig().SCHEDULER_PORT;
 
 runMigrations();
 

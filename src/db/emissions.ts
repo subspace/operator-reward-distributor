@@ -108,3 +108,17 @@ export const updateFailed = (periodId: number): void => {
   );
   stmt.run({ chain_id: cfg.CHAIN_ID, period_id: periodId });
 };
+
+export const getSpentShannonsSince = (chainId: string, sinceIso: string): bigint => {
+  const db = getDb();
+  const row = (db as any)
+    .prepare(
+      `SELECT COALESCE(SUM(CAST(tip_shannons AS INTEGER)), 0) AS spent
+       FROM emissions
+       WHERE chain_id = ?
+         AND status IN ('submitted','confirmed')
+         AND emitted_at >= datetime(?)`
+    )
+    .get(chainId, sinceIso) as { spent: number };
+  return BigInt(row.spent);
+};
