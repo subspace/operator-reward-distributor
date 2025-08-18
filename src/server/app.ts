@@ -121,12 +121,21 @@ export const start = async () => {
     const periodTo = url.searchParams.get('periodTo');
     const limit = url.searchParams.get('limit');
     const offset = url.searchParams.get('offset');
+    const orderBy = url.searchParams.get('order_by') as
+      | 'period_id_asc'
+      | 'period_id_desc'
+      | 'emitted_at_asc'
+      | 'emitted_at_desc'
+      | 'scheduled_at_asc'
+      | 'scheduled_at_desc'
+      | null;
     const rows = listEmissions({
       status: status ?? undefined,
       periodFrom: periodFrom ? Number(periodFrom) : undefined,
       periodTo: periodTo ? Number(periodTo) : undefined,
       limit: limit ? Number(limit) : undefined,
       offset: offset ? Number(offset) : undefined,
+      orderBy: orderBy ?? undefined,
     });
     const mapped = rows.map((r) => ({
       ...r,

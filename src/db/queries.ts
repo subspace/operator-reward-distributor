@@ -26,6 +26,13 @@ export interface ListEmissionsQuery {
   periodTo?: number;
   limit?: number;
   offset?: number;
+  orderBy?:
+    | 'period_id_asc'
+    | 'period_id_desc'
+    | 'emitted_at_asc'
+    | 'emitted_at_desc'
+    | 'scheduled_at_asc'
+    | 'scheduled_at_desc';
 }
 
 export const listEmissions = (query: ListEmissionsQuery = {}): EmissionRow[] => {
@@ -51,12 +58,31 @@ export const listEmissions = (query: ListEmissionsQuery = {}): EmissionRow[] => 
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 500);
   const offset = Math.max(query.offset ?? 0, 0);
 
+  const orderBy = (() => {
+    switch (query.orderBy) {
+      case 'period_id_asc':
+        return 'period_id ASC';
+      case 'period_id_desc':
+        return 'period_id DESC';
+      case 'emitted_at_asc':
+        return 'emitted_at ASC, period_id ASC';
+      case 'emitted_at_desc':
+        return 'emitted_at DESC, period_id DESC';
+      case 'scheduled_at_asc':
+        return 'scheduled_at ASC, period_id ASC';
+      case 'scheduled_at_desc':
+        return 'scheduled_at DESC, period_id DESC';
+      default:
+        return 'period_id DESC';
+    }
+  })();
+
   const sql = `
     SELECT id, chain_id, period_id, scheduled_at, emitted_at, remark_payload, tip_shannons,
            extrinsic_hash, block_hash, block_number, confirmation_depth, confirmed_at, status
     FROM emissions
     WHERE ${where.join(' AND ')}
-    ORDER BY period_id DESC
+    ORDER BY ${orderBy}
     LIMIT @limit OFFSET @offset
   `;
   const stmt = db.prepare(sql);
