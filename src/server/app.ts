@@ -67,6 +67,45 @@ export const start = async () => {
     };
   });
 
+  app.get('/config', async () => {
+    const cfg = loadConfig();
+    return {
+      ok: true,
+      data: {
+        chainId: cfg.CHAIN_ID,
+        intervalSeconds: cfg.INTERVAL_SECONDS,
+        tipShannons: cfg.TIP_SHANNONS.toString(),
+        dailyCapShannons: cfg.DAILY_CAP_SHANNONS.toString(),
+        confirmations: cfg.CONFIRMATIONS,
+        mortalityBlocks: cfg.MORTALITY_BLOCKS,
+        maxRetries: cfg.MAX_RETRIES,
+        dryRun: cfg.DRY_RUN,
+        rpcEndpoints: cfg.rpcEndpoints,
+      },
+    };
+  });
+
+  app.get('/scheduler', async () => {
+    const cfg = loadConfig();
+    let currentPeriod: number | null = null;
+    const running = await probeScheduler();
+    try {
+      const api = await getApi();
+      const tsMs = await getOnChainTimestampMs(api);
+      currentPeriod = computePeriodId(tsMs, cfg.INTERVAL_SECONDS);
+    } catch {
+      // ignore chain errors
+    }
+    return {
+      ok: true,
+      data: {
+        running,
+        currentPeriod,
+        intervalSeconds: cfg.INTERVAL_SECONDS,
+      },
+    };
+  });
+
   const port = loadConfig().SERVER_PORT;
   await app.listen({ port, host: '0.0.0.0' });
 };
