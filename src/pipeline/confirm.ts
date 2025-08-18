@@ -1,5 +1,4 @@
 import { getApi } from '../chain/api.js';
-import { getBlockAuthor } from '../chain/author.js';
 import { loadConfig } from '../config.js';
 import { updateConfirmed, updateInclusion } from '../db/emissions.js';
 
@@ -23,10 +22,8 @@ export const trackConfirmation = async (
         try {
           const depth = lastHeader.number.toNumber() - inclusionNumber;
           if (depth >= cfg.CONFIRMATIONS) {
-            const author = await getBlockAuthor(api, inclusionHash);
             updateConfirmed(periodId, {
               confirmation_depth: depth,
-              block_author: author,
             });
             if (unsubscribe) unsubscribe();
             resolve();

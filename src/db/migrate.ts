@@ -25,7 +25,7 @@ export const runMigrations = (): void => {
   const applied = new Set<string>(appliedStmt.all().map((r: any) => r.name));
 
   const insertStmt = db.prepare(
-    'INSERT INTO _migrations (name, applied_at) VALUES (?, datetime("now"))'
+    "INSERT INTO _migrations (name, applied_at) VALUES (?, datetime('now'))"
   );
 
   db.exec('BEGIN');

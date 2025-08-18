@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS emissions (
   extrinsic_hash TEXT,
   block_hash TEXT,
   block_number INTEGER,
-  block_author TEXT,
   confirmation_depth INTEGER,
   confirmed_at TEXT,
   status TEXT NOT NULL CHECK (status IN (
