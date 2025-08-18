@@ -9,6 +9,8 @@ const schema = z.object({
   CHAIN_WS: z.string().url(),
   CHAIN_ID: z.string().min(1),
   INTERVAL_SECONDS: z.coerce.number().int().positive(),
+  SERVER_PORT: z.coerce.number().int().min(1).max(65535).default(8787),
+  SCHEDULER_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   TIP_AI3: z.string().transform((s, ctx) => {
     try {
       return parseAi3ToShannons(s);
@@ -40,6 +42,8 @@ export interface AppConfig {
   CHAIN_WS: string;
   CHAIN_ID: string;
   INTERVAL_SECONDS: number;
+  SERVER_PORT: number;
+  SCHEDULER_PORT: number;
   TIP_SHANNONS: bigint;
   DAILY_CAP_SHANNONS: bigint;
   MAX_RETRIES: number;
@@ -66,6 +70,8 @@ export const loadConfig = (): AppConfig => {
     CHAIN_WS: env.CHAIN_WS,
     CHAIN_ID: env.CHAIN_ID,
     INTERVAL_SECONDS: env.INTERVAL_SECONDS,
+    SERVER_PORT: env.SERVER_PORT || 3001,
+    SCHEDULER_PORT: env.SCHEDULER_PORT || 3000,
     TIP_SHANNONS: env.TIP_AI3,
     DAILY_CAP_SHANNONS: env.DAILY_CAP_AI3,
     MAX_RETRIES: env.MAX_RETRIES,

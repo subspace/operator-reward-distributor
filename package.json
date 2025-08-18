@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/index.ts",
+    "serve": "tsx src/server/app.ts",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
@@ -46,6 +47,7 @@
     "better-sqlite3": "^12.2.0",
     "bn.js": "^5.2.2",
     "dotenv": "^17.2.1",
+    "fastify": "^5.0.0",
     "pino": "^9.9.0",
     "zod": "^4.0.17"
   }
