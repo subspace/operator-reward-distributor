@@ -15,10 +15,9 @@ describe('config amounts are bigint', () => {
     process.env.MAX_RETRIES = '5';
     process.env.MORTALITY_BLOCKS = '64';
     process.env.CONFIRMATIONS = '10';
-    process.env.ACCOUNT_MNEMONIC =
-      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+    process.env.ACCOUNT_PRIVATE_KEY =
+      '0x1111111111111111111111111111111111111111111111111111111111111111';
     process.env.DB_URL = 'sqlite:./:memory:';
-    process.env.PAUSED = 'false';
     process.env.DRY_RUN = 'true';
   });
 
