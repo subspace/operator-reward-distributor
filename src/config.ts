@@ -33,7 +33,6 @@ const schema = z.object({
     .string()
     .regex(/^0x[0-9a-fA-F]{64}$/i, 'ACCOUNT_PRIVATE_KEY must be 0x-prefixed 32-byte hex'),
   DB_URL: z.string().min(1).default('sqlite:./ord.sqlite'),
-  PAUSED: z.coerce.boolean().default(false),
   DRY_RUN: z.coerce.boolean().default(false),
 });
 
@@ -48,9 +47,7 @@ export interface AppConfig {
   CONFIRMATIONS: number;
   RPC_FALLBACKS?: string;
   ACCOUNT_PRIVATE_KEY: string;
-  KEY_TYPE: 'ethereum' | 'sr25519';
   DB_URL: string;
-  PAUSED: boolean;
   DRY_RUN: boolean;
   rpcEndpoints: string[];
 }
@@ -76,9 +73,7 @@ export const loadConfig = (): AppConfig => {
     CONFIRMATIONS: env.CONFIRMATIONS,
     RPC_FALLBACKS: env.RPC_FALLBACKS,
     ACCOUNT_PRIVATE_KEY: env.ACCOUNT_PRIVATE_KEY,
-    KEY_TYPE: env.KEY_TYPE,
     DB_URL: env.DB_URL,
-    PAUSED: env.PAUSED,
     DRY_RUN: env.DRY_RUN,
     rpcEndpoints,
   };
