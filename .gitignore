@@ -15,3 +15,6 @@ dist
 #database
 *.sqlite
 *.sqlite-*
+
+# Yarn
+.yarn/install-state.gz
