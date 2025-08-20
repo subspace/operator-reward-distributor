@@ -14,6 +14,17 @@ export interface EmissionRecord {
   status: 'scheduled' | 'submitted' | 'confirmed' | 'failed' | 'skipped_budget';
 }
 
+/**
+ * Idempotently reserve an emission for a given period.
+ *
+ * `INSERT OR IGNORE` against the UNIQUE `(chain_id, period_id)`
+ * constraint so that only the first call per period creates a row and
+ * creates the reservation. Later calls for the same period will
+ * be ignored.
+ *
+ * Returns `true` when a new row was inserted (reservation acquired), and
+ * `false` when the row already existed (reservation already taken).
+ */
 export const reserveEmissionIfNeeded = (periodId: number): boolean => {
   const cfg = loadConfig();
   const db = getDb();

@@ -27,6 +27,6 @@ export const runScheduler = async (): Promise<void> => {
     } catch (e) {
       logger.error({ err: e }, 'scheduler error');
     }
-    await sleep(1000);
+    await sleep(2000);
   }
 };
