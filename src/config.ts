@@ -6,7 +6,8 @@ import { parseAi3ToShannons } from './utils/amounts.js';
 loadEnv();
 
 const schema = z.object({
-  CHAIN_WS: z.string().url(),
+  // Comma-separated URLs supported (we validate after split)
+  CHAIN_WS: z.string().min(1),
   CHAIN_ID: z.string().min(1),
   INTERVAL_SECONDS: z.coerce.number().int().positive(),
   SERVER_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
@@ -30,7 +31,6 @@ const schema = z.object({
   MAX_RETRIES: z.coerce.number().int().min(0).default(5),
   MORTALITY_BLOCKS: z.coerce.number().int().min(1).default(64),
   CONFIRMATIONS: z.coerce.number().int().min(1).default(10),
-  RPC_FALLBACKS: z.string().optional(),
   ACCOUNT_PRIVATE_KEY: z
     .string()
     .regex(/^0x[0-9a-fA-F]{64}$/i, 'ACCOUNT_PRIVATE_KEY must be 0x-prefixed 32-byte hex'),
@@ -48,7 +48,6 @@ export interface AppConfig {
   MAX_RETRIES: number;
   MORTALITY_BLOCKS: number;
   CONFIRMATIONS: number;
-  RPC_FALLBACKS?: string;
   ACCOUNT_PRIVATE_KEY: string;
   DB_URL: string;
   rpcEndpoints: string[];
@@ -61,9 +60,21 @@ export const loadConfig = (): AppConfig => {
     throw new Error(`Invalid configuration: ${issues}`);
   }
   const env = parsed.data as any;
-  const rpcEndpoints = [env.CHAIN_WS, ...(env.RPC_FALLBACKS ? env.RPC_FALLBACKS.split(',') : [])]
-    .map((s) => s.trim())
+  const chainWsEntries = env.CHAIN_WS.split(',')
+    .map((s: string) => s.trim())
     .filter(Boolean);
+  const rpcEndpoints = chainWsEntries.filter((u: string) => {
+    try {
+      // throws if invalid
+      const url = new URL(u);
+      return url.protocol === 'ws:' || url.protocol === 'wss:';
+    } catch {
+      return false;
+    }
+  });
+  if (rpcEndpoints.length === 0) {
+    throw new Error('Invalid configuration: CHAIN_WS must include at least one valid ws/wss URL');
+  }
   const cfg: AppConfig = {
     CHAIN_WS: env.CHAIN_WS,
     CHAIN_ID: env.CHAIN_ID,
@@ -75,7 +86,6 @@ export const loadConfig = (): AppConfig => {
     MAX_RETRIES: env.MAX_RETRIES,
     MORTALITY_BLOCKS: env.MORTALITY_BLOCKS,
     CONFIRMATIONS: env.CONFIRMATIONS,
-    RPC_FALLBACKS: env.RPC_FALLBACKS,
     ACCOUNT_PRIVATE_KEY: env.ACCOUNT_PRIVATE_KEY,
     DB_URL: env.DB_URL,
     rpcEndpoints,
