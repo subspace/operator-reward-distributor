@@ -6,7 +6,7 @@ import { logger } from '../logger.js';
 let apiInstance: ApiPromise | null = null;
 
 export const getApi = async (): Promise<ApiPromise> => {
-  if (apiInstance && apiInstance.isConnected) {
+  if (apiInstance) {
     return apiInstance;
   }
 
@@ -24,7 +24,7 @@ export const getApi = async (): Promise<ApiPromise> => {
   });
 
   apiInstance = await ApiPromise.create({ provider });
-  await apiInstance.isReady;
+  await apiInstance.isReadyOrError;
 
   logger.info('chain api ready');
 
