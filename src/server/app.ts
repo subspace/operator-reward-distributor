@@ -13,11 +13,11 @@ const buildApp = () => Fastify({ logger: true });
 
 const probeScheduler = async (): Promise<boolean> => {
   const cfg = loadConfig();
-  const port = cfg.SCHEDULER_PORT;
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 500);
-    const res = await fetch(`http://127.0.0.1:${port}/`, { signal: controller.signal });
+    const res = await fetch(cfg.SCHEDULER_HEALTH_URL, { signal: controller.signal });
     clearTimeout(timeout);
     return res.ok;
   } catch {

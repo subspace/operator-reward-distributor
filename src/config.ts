@@ -12,6 +12,7 @@ const schema = z.object({
   INTERVAL_SECONDS: z.coerce.number().int().positive(),
   SERVER_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   SCHEDULER_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  SCHEDULER_HEALTH_URL: z.string().url().optional(),
   TIP_AI3: z.string().transform((s, ctx) => {
     try {
       return parseAi3ToShannons(s);
@@ -43,6 +44,7 @@ export interface AppConfig {
   INTERVAL_SECONDS: number;
   SERVER_PORT: number;
   SCHEDULER_PORT: number;
+  SCHEDULER_HEALTH_URL: string;
   TIP_SHANNONS: bigint;
   DAILY_CAP_SHANNONS: bigint;
   MAX_RETRIES: number;
@@ -60,6 +62,10 @@ export const loadConfig = (): AppConfig => {
     throw new Error(`Invalid configuration: ${issues}`);
   }
   const env = parsed.data as any;
+  const schedulerHealthUrl: string =
+    env.SCHEDULER_HEALTH_URL && env.SCHEDULER_HEALTH_URL.length > 0
+      ? env.SCHEDULER_HEALTH_URL
+      : `http://127.0.0.1:${env.SCHEDULER_PORT}/`;
   const chainWsEntries = env.CHAIN_WS.split(',')
     .map((s: string) => s.trim())
     .filter(Boolean);
@@ -81,6 +87,7 @@ export const loadConfig = (): AppConfig => {
     INTERVAL_SECONDS: env.INTERVAL_SECONDS,
     SERVER_PORT: env.SERVER_PORT,
     SCHEDULER_PORT: env.SCHEDULER_PORT,
+    SCHEDULER_HEALTH_URL: schedulerHealthUrl,
     TIP_SHANNONS: env.TIP_AI3,
     DAILY_CAP_SHANNONS: env.DAILY_CAP_AI3,
     MAX_RETRIES: env.MAX_RETRIES,
