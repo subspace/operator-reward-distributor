@@ -63,6 +63,14 @@ yarn health     # prints chain info and current head
 - `yarn health`: show chain details via RPC
 - `yarn lint` / `yarn format`: lint and format code
 
+## Docker
+
+See [infra/README.md](infra/README.md) for details.
+
+## Documentation
+
+See [docs/README.md](docs/README.md) for more detailed documentation.
+
 ## License
 
 [Unlicense](LICENSE)
