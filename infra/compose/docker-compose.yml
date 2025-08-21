@@ -24,7 +24,7 @@ services:
       - '127.0.0.1:8944:8944/tcp'
     restart: unless-stopped
     volumes:
-      - node-data:/var/subspace:rw
+      - node_data:/var/subspace:rw
     command:
       [
         'run',
@@ -63,6 +63,7 @@ services:
     environment:
       DB_URL: sqlite:/data/ord.sqlite
       SCHEDULER_PORT: ${SCHEDULER_PORT:-3000}
+      LOG_FILE_PATH: /data/logs/${SCHEDULER_LOG_FILE:-ord-scheduler.log}
     restart: unless-stopped
     depends_on:
       init-perms:
@@ -74,6 +75,7 @@ services:
       retries: 6
     volumes:
       - ord_data:/data
+      - ${HOST_LOGS_DIR:-./data/logs}:/data/logs
     networks:
       - ord
 
@@ -87,6 +89,7 @@ services:
       DB_URL: sqlite:/data/ord.sqlite
       SCHEDULER_HEALTH_URL: http://scheduler:${SCHEDULER_PORT}/
       SERVER_PORT: ${SERVER_PORT:-3001}
+      LOG_FILE_PATH: /data/logs/${API_LOG_FILE:-ord-api.log}
     restart: unless-stopped
     depends_on:
       init-perms:
@@ -102,12 +105,13 @@ services:
       - '${SERVER_PORT:-3001}:${SERVER_PORT:-3001}'
     volumes:
       - ord_data:/data
+      - ${HOST_LOGS_DIR:-./data/logs}:/data/logs
     networks:
       - ord
 
 volumes:
   ord_data: {}
-  node-data: {}
+  node_data: {}
 
 networks:
   ord: {}

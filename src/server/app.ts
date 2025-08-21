@@ -5,11 +5,11 @@ import { getApi } from '../chain/api.js';
 import { getChainInfo } from '../chain/info.js';
 import { loadConfig } from '../config.js';
 import { getEmissionByPeriod, listEmissions } from '../db/queries.js';
-import { logger as pinoLogger } from '../logger.js';
+import { pinoOptions, logger } from '../logger.js';
 import { computePeriodId, getOnChainTimestampMs } from '../scheduler/period.js';
 import { formatShannonsToAi3 } from '../utils/amounts.js';
 
-const buildApp = () => Fastify({ logger: true });
+const buildApp = () => Fastify({ logger: pinoOptions });
 
 const probeScheduler = async (): Promise<boolean> => {
   const cfg = loadConfig();
@@ -220,6 +220,6 @@ export const start = async () => {
 
 // Start when invoked via yarn serve
 start().catch((err) => {
-  pinoLogger.error({ err }, 'server failed to start');
+  logger.error({ err }, 'server failed to start');
   process.exit(1);
 });
