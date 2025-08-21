@@ -6,11 +6,13 @@ import { parseAi3ToShannons } from './utils/amounts.js';
 loadEnv();
 
 const schema = z.object({
-  CHAIN_WS: z.string().url(),
+  // Comma-separated URLs supported (we validate after split)
+  CHAIN_WS: z.string().min(1),
   CHAIN_ID: z.string().min(1),
   INTERVAL_SECONDS: z.coerce.number().int().positive(),
   SERVER_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   SCHEDULER_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  SCHEDULER_HEALTH_URL: z.string().url().optional(),
   TIP_AI3: z.string().transform((s, ctx) => {
     try {
       return parseAi3ToShannons(s);
@@ -30,7 +32,6 @@ const schema = z.object({
   MAX_RETRIES: z.coerce.number().int().min(0).default(5),
   MORTALITY_BLOCKS: z.coerce.number().int().min(1).default(64),
   CONFIRMATIONS: z.coerce.number().int().min(1).default(10),
-  RPC_FALLBACKS: z.string().optional(),
   ACCOUNT_PRIVATE_KEY: z
     .string()
     .regex(/^0x[0-9a-fA-F]{64}$/i, 'ACCOUNT_PRIVATE_KEY must be 0x-prefixed 32-byte hex'),
@@ -43,12 +44,12 @@ export interface AppConfig {
   INTERVAL_SECONDS: number;
   SERVER_PORT: number;
   SCHEDULER_PORT: number;
+  SCHEDULER_HEALTH_URL: string;
   TIP_SHANNONS: bigint;
   DAILY_CAP_SHANNONS: bigint;
   MAX_RETRIES: number;
   MORTALITY_BLOCKS: number;
   CONFIRMATIONS: number;
-  RPC_FALLBACKS?: string;
   ACCOUNT_PRIVATE_KEY: string;
   DB_URL: string;
   rpcEndpoints: string[];
@@ -61,21 +62,37 @@ export const loadConfig = (): AppConfig => {
     throw new Error(`Invalid configuration: ${issues}`);
   }
   const env = parsed.data as any;
-  const rpcEndpoints = [env.CHAIN_WS, ...(env.RPC_FALLBACKS ? env.RPC_FALLBACKS.split(',') : [])]
-    .map((s) => s.trim())
+  const schedulerHealthUrl: string =
+    env.SCHEDULER_HEALTH_URL && env.SCHEDULER_HEALTH_URL.length > 0
+      ? env.SCHEDULER_HEALTH_URL
+      : `http://127.0.0.1:${env.SCHEDULER_PORT}/`;
+  const chainWsEntries = env.CHAIN_WS.split(',')
+    .map((s: string) => s.trim())
     .filter(Boolean);
+  const rpcEndpoints = chainWsEntries.filter((u: string) => {
+    try {
+      // throws if invalid
+      const url = new URL(u);
+      return url.protocol === 'ws:' || url.protocol === 'wss:';
+    } catch {
+      return false;
+    }
+  });
+  if (rpcEndpoints.length === 0) {
+    throw new Error('Invalid configuration: CHAIN_WS must include at least one valid ws/wss URL');
+  }
   const cfg: AppConfig = {
     CHAIN_WS: env.CHAIN_WS,
     CHAIN_ID: env.CHAIN_ID,
     INTERVAL_SECONDS: env.INTERVAL_SECONDS,
     SERVER_PORT: env.SERVER_PORT,
     SCHEDULER_PORT: env.SCHEDULER_PORT,
+    SCHEDULER_HEALTH_URL: schedulerHealthUrl,
     TIP_SHANNONS: env.TIP_AI3,
     DAILY_CAP_SHANNONS: env.DAILY_CAP_AI3,
     MAX_RETRIES: env.MAX_RETRIES,
     MORTALITY_BLOCKS: env.MORTALITY_BLOCKS,
     CONFIRMATIONS: env.CONFIRMATIONS,
-    RPC_FALLBACKS: env.RPC_FALLBACKS,
     ACCOUNT_PRIVATE_KEY: env.ACCOUNT_PRIVATE_KEY,
     DB_URL: env.DB_URL,
     rpcEndpoints,

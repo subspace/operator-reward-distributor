@@ -16,7 +16,7 @@ At mainnet launch, operator fees earned from regular network activity may not be
 
 - Node.js 20+ and Yarn.
 - A funded account’s private key (0x‑prefixed, 32‑byte hex) to sign the transactions.
-- A WebSocket endpoint for the network (you can list backups/fallbacks).
+- WebSocket endpoint(s) for the network. You can list multiple, comma-separated in `CHAIN_WS`.
 
 ## Getting started
 
@@ -36,7 +36,7 @@ cp .env.example .env
 
 What you typically configure:
 
-- Network address and optional fallbacks (the service will try the next if one is down)
+- Network address(es): set one or more WS endpoints in `CHAIN_WS`, comma-separated. The client rotates/reconnects automatically.
 - How often to send (interval), how much to tip, and your daily tip budget
 - How many confirmations to wait before considering a transaction final
 - Where to store the local database and whether to run in dry‑run mode
@@ -62,6 +62,14 @@ yarn health     # prints chain info and current head
 - `yarn migrate`: apply SQL migrations in `migrations/`
 - `yarn health`: show chain details via RPC
 - `yarn lint` / `yarn format`: lint and format code
+
+## Docker
+
+See [infra/README.md](infra/README.md) for details.
+
+## Documentation
+
+See [docs/README.md](docs/README.md) for more detailed documentation.
 
 ## License
 

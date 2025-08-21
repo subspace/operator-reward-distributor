@@ -3,13 +3,18 @@ import { loadConfig } from '../config.js';
 import { reserveEmissionIfNeeded } from '../db/emissions.js';
 import { logger } from '../logger.js';
 import { submitForPeriod } from '../pipeline/submit.js';
+import { createBackoff, sleep } from '../utils/backoff.js';
 
 import { computePeriodId, getOnChainTimestampMs } from './period.js';
 
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
-
 export const runScheduler = async (): Promise<void> => {
   const cfg = loadConfig();
+  const backoff = createBackoff({
+    initialMs: 2000,
+    maxMs: 30000,
+    multiplier: 1.8,
+    jitterRatio: 0.2,
+  });
 
   while (true) {
     try {
@@ -24,8 +29,12 @@ export const runScheduler = async (): Promise<void> => {
           logger.error({ err: e, periodId }, 'submission error');
         });
       }
+      backoff.reset();
     } catch (e) {
       logger.error({ err: e }, 'scheduler error');
+      const delay = backoff.nextDelayMs();
+      await sleep(delay);
+      continue;
     }
     await sleep(2000);
   }

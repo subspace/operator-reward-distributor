@@ -2,6 +2,7 @@ import { getApi } from '../chain/api.js';
 import { loadConfig } from '../config.js';
 import { updateConfirmed, updateInclusion } from '../db/emissions.js';
 import { logger } from '../logger.js';
+import { createBackoff, sleep } from '../utils/backoff.js';
 
 export const trackConfirmation = async (
   periodId: number,
@@ -9,6 +10,12 @@ export const trackConfirmation = async (
   inclusionNumber: number
 ): Promise<void> => {
   const cfg = loadConfig();
+  const backoff = createBackoff({
+    initialMs: 3000,
+    maxMs: 30000,
+    multiplier: 1.8,
+    jitterRatio: 0.2,
+  });
 
   updateInclusion(periodId, {
     block_hash: inclusionHash,
@@ -19,9 +26,6 @@ export const trackConfirmation = async (
 
   // Poll best head until target reached
   // Simple and robust; avoids keeping a long-lived subscription
-  // Sleep helper
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
   // wait loop
   while (true) {
     try {
@@ -31,10 +35,15 @@ export const trackConfirmation = async (
       if (best >= target) {
         break;
       }
+      // healthy step when connected: constant small poll
+      await sleep(6000);
+      backoff.reset();
     } catch (err) {
       logger.warn({ err, periodId, inclusionNumber }, 'confirmation polling error; retrying');
+      const delay = backoff.nextDelayMs();
+      await sleep(delay);
+      continue;
     }
-    await sleep(6000);
   }
 
   // Verify canonical hash at inclusionNumber still matches

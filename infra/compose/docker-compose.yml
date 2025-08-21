@@ -1,0 +1,117 @@
+x-app-build: &app-build
+  context: ../..
+  dockerfile: infra/compose/Dockerfile
+
+name: ord
+
+services:
+  init-perms:
+    image: alpine:3.20
+    command: ['/bin/sh', '-lc', 'mkdir -p /data && chown -R 1001:1001 /data']
+    volumes:
+      - ord_data:/data
+    restart: 'no'
+    networks:
+      - ord
+  node:
+    profiles: [local-node]
+    image: ghcr.io/autonomys/node:${NODE_DOCKER_TAG}
+    ports:
+      - '30333:30333/tcp'
+      - '30433:30433/tcp'
+      - '30334:30334/tcp'
+      - '127.0.0.1:9944:9944/tcp'
+      - '127.0.0.1:8944:8944/tcp'
+    restart: unless-stopped
+    volumes:
+      - node_data:/var/subspace:rw
+    command:
+      [
+        'run',
+        '--chain',
+        '${NETWORK_ID}',
+        '--base-path',
+        '/var/subspace',
+        '--',
+        '--domain-id',
+        '${DOMAIN_ID:-0}',
+        '--rpc-cors',
+        'all',
+        '--rpc-methods',
+        'safe',
+        '--rpc-listen-on',
+        '0.0.0.0:8944',
+      ]
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'curl -H ''Content-Type: application/json'' -d ''{"id":1, "jsonrpc":"2.0", "method": "system_health", "params":[]}'' http://localhost:9944/',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - ord
+
+  scheduler:
+    build: *app-build
+    image: ord-app:latest
+    command: ['sh', '-lc', 'node dist/index.js']
+    env_file:
+      - ./.env
+    environment:
+      DB_URL: sqlite:/data/ord.sqlite
+      SCHEDULER_PORT: ${SCHEDULER_PORT:-3000}
+      LOG_FILE_PATH: /data/logs/${SCHEDULER_LOG_FILE:-ord-scheduler.log}
+    restart: unless-stopped
+    depends_on:
+      init-perms:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://127.0.0.1:${SCHEDULER_PORT}/']
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    volumes:
+      - ord_data:/data
+      - ${HOST_LOGS_DIR:-./data/logs}:/data/logs
+    networks:
+      - ord
+
+  api:
+    build: *app-build
+    image: ord-app:latest
+    command: ['sh', '-lc', 'node dist/server/app.js']
+    env_file:
+      - ./.env
+    environment:
+      DB_URL: sqlite:/data/ord.sqlite
+      SCHEDULER_HEALTH_URL: http://scheduler:${SCHEDULER_PORT}/
+      SERVER_PORT: ${SERVER_PORT:-3001}
+      LOG_FILE_PATH: /data/logs/${API_LOG_FILE:-ord-api.log}
+    restart: unless-stopped
+    depends_on:
+      init-perms:
+        condition: service_completed_successfully
+      scheduler:
+        condition: service_started
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://127.0.0.1:${SERVER_PORT:-3001}/health']
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    ports:
+      - '${SERVER_PORT:-3001}:${SERVER_PORT:-3001}'
+    volumes:
+      - ord_data:/data
+      - ${HOST_LOGS_DIR:-./data/logs}:/data/logs
+    networks:
+      - ord
+
+volumes:
+  ord_data: {}
+  node_data: {}
+
+networks:
+  ord: {}
