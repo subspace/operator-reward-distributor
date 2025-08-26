@@ -4,12 +4,18 @@ x-app-build: &app-build
 
 name: ord
 
+volumes:
+  node_data: {}
+
+networks:
+  ord: {}
+
 services:
   init-perms:
     image: alpine:3.20
     command: ['/bin/sh', '-lc', 'mkdir -p /data && chown -R 1001:1001 /data']
     volumes:
-      - ord_data:/data
+      - ${HOST_DATA_DIR:-./data}:/data
     restart: 'no'
     networks:
       - ord
@@ -61,8 +67,6 @@ services:
     env_file:
       - ./.env
     environment:
-      DB_URL: sqlite:/data/ord.sqlite
-      SCHEDULER_PORT: ${SCHEDULER_PORT:-3000}
       LOG_FILE_PATH: /data/logs/${SCHEDULER_LOG_FILE:-ord-scheduler.log}
     restart: unless-stopped
     depends_on:
@@ -74,8 +78,7 @@ services:
       timeout: 3s
       retries: 6
     volumes:
-      - ord_data:/data
-      - ${HOST_LOGS_DIR:-./data/logs}:/data/logs
+      - ${HOST_DATA_DIR:-./data}:/data
     networks:
       - ord
 
@@ -86,9 +89,7 @@ services:
     env_file:
       - ./.env
     environment:
-      DB_URL: sqlite:/data/ord.sqlite
-      SCHEDULER_HEALTH_URL: http://scheduler:${SCHEDULER_PORT}/
-      SERVER_PORT: ${SERVER_PORT:-3001}
+      SCHEDULER_HEALTH_URL: http://scheduler:${SCHEDULER_PORT:-3000}/
       LOG_FILE_PATH: /data/logs/${API_LOG_FILE:-ord-api.log}
     restart: unless-stopped
     depends_on:
@@ -104,14 +105,6 @@ services:
     ports:
       - '${SERVER_PORT:-3001}:${SERVER_PORT:-3001}'
     volumes:
-      - ord_data:/data
-      - ${HOST_LOGS_DIR:-./data/logs}:/data/logs
+      - ${HOST_DATA_DIR:-./data}:/data
     networks:
       - ord
-
-volumes:
-  ord_data: {}
-  node_data: {}
-
-networks:
-  ord: {}
