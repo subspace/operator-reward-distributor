@@ -122,14 +122,16 @@ export const updateFailed = (periodId: number): void => {
 
 export const getSpentShannonsSince = (chainId: string, sinceIso: string): bigint => {
   const db = getDb();
-  const row = (db as any)
+  const rows = (db as Database.Database)
     .prepare(
-      `SELECT COALESCE(SUM(CAST(tip_shannons AS INTEGER)), 0) AS spent
+      `SELECT tip_shannons
        FROM emissions
        WHERE chain_id = ?
          AND status IN ('submitted','confirmed')
          AND emitted_at >= datetime(?)`
     )
-    .get(chainId, sinceIso) as { spent: number };
-  return BigInt(row.spent);
+    .all(chainId, sinceIso) as Array<{ tip_shannons: string }>;
+
+  const total: bigint = rows.reduce((acc, row) => acc + BigInt(row.tip_shannons), 0n);
+  return total;
 };
