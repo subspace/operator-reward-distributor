@@ -8,7 +8,7 @@ import { runMigrations } from './db/migrate.js';
 import { logger } from './logger.js';
 import { runScheduler } from './scheduler/loop.js';
 
-const port = loadConfig().SCHEDULER_PORT;
+const { SCHEDULER_HOST: host, SCHEDULER_PORT: port } = loadConfig();
 
 runMigrations();
 
@@ -19,7 +19,7 @@ const server = createServer((_, res) => {
   res.end('operator-reward-distributor running');
 });
 
-server.listen(port, () => {
+server.listen(port, host, () => {
   logger.info({ port, chainId: cfg.CHAIN_ID }, 'booted');
   // start scheduler in background
   runScheduler().catch((e) => {
