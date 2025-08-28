@@ -24,6 +24,17 @@ export const trackConfirmation = async (
 
   const target = inclusionNumber + cfg.CONFIRMATIONS;
 
+  logger.info(
+    {
+      periodId,
+      inclusionHash,
+      inclusionNumber,
+      requiredConfirmations: cfg.CONFIRMATIONS,
+      targetBlockNumber: target,
+    },
+    'tracking confirmation depth'
+  );
+
   // Poll best head until target reached
   // Simple and robust; avoids keeping a long-lived subscription
   // wait loop
@@ -33,6 +44,16 @@ export const trackConfirmation = async (
       const head = await api.rpc.chain.getHeader();
       const best = head.number.toNumber();
       if (best >= target) {
+        logger.info(
+          {
+            periodId,
+            inclusionNumber,
+            currentBlockNumber: best,
+            targetBlockNumber: target,
+            actualConfirmations: best - inclusionNumber,
+          },
+          'confirmation depth target reached'
+        );
         break;
       }
       // healthy step when connected: constant small poll
@@ -52,14 +73,35 @@ export const trackConfirmation = async (
     const canonicalAtInclusion = (await api.rpc.chain.getBlockHash(inclusionNumber)).toHex();
     if (canonicalAtInclusion !== inclusionHash) {
       // Reorg happened before depth; leave as submitted and return
+      logger.warn(
+        {
+          periodId,
+          inclusionNumber,
+          expectedHash: inclusionHash,
+          actualHash: canonicalAtInclusion,
+        },
+        'chain reorg detected before confirmation depth - transaction remains submitted'
+      );
       return;
     }
 
     const bestNow = (await api.rpc.chain.getHeader()).number.toNumber();
     const depth = Math.max(0, bestNow - inclusionNumber);
+
     updateConfirmed(periodId, {
       confirmation_depth: depth,
     });
+
+    logger.info(
+      {
+        periodId,
+        inclusionNumber,
+        inclusionHash,
+        finalConfirmationDepth: depth,
+        currentBlockNumber: bestNow,
+      },
+      'transaction confirmed - emission complete'
+    );
   } catch (err) {
     logger.warn({ err, periodId, inclusionNumber }, 'confirmation finalize error; skipping');
   }

@@ -31,8 +31,14 @@ if (logToConsole) {
 
 if (logFilePath && logFilePath.length > 0) {
   targets.push({
-    target: 'pino/file',
-    options: { destination: logFilePath, mkdir: true },
+    target: 'pino-pretty',
+    options: {
+      destination: logFilePath,
+      mkdir: true,
+      colorize: false, // No colors in file output
+      translateTime: 'SYS:standard',
+      singleLine: true, // Keep each log entry on a single line
+    },
     level: resolvedLevel,
   });
 }

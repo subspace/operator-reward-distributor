@@ -43,6 +43,16 @@ export const submitForPeriod = async (periodId: number): Promise<void> => {
 
   const { extrinsic, payload, tipValue } = composeRemarkWithTip(api, periodId, cfg.TIP_SHANNONS);
 
+  logger.info(
+    {
+      periodId,
+      remarkPayload: JSON.stringify(payload),
+      tipShannons: tipValue.toString(),
+      extrinsicMethod: 'system.remark',
+    },
+    'extrinsic composed'
+  );
+
   const signer = getSigner();
   try {
     const { extrinsicHash, blockNumber, blockHash } = await signAndSendWithTip(
@@ -52,10 +62,31 @@ export const submitForPeriod = async (periodId: number): Promise<void> => {
       tipValue
     );
 
+    logger.info(
+      {
+        periodId,
+        extrinsicHash,
+        blockHash,
+        blockNumber,
+        tipShannons: tipValue.toString(),
+      },
+      'transaction submitted successfully'
+    );
+
     updateSubmitted(periodId, {
       extrinsic_hash: extrinsicHash,
       remark_payload: JSON.stringify(payload),
     });
+
+    logger.info(
+      {
+        periodId,
+        extrinsicHash,
+        blockHash,
+        blockNumber,
+      },
+      'starting confirmation tracking'
+    );
 
     // Track inclusion/confirmation depth; best-effort in background
     void trackConfirmation(periodId, blockHash, blockNumber);
