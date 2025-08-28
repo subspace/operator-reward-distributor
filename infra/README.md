@@ -88,6 +88,6 @@ curl -s http://127.0.0.1:${PROXY_HOST_PORT:-80}/health | jq .
 Notes:
 
 - API service binds to `SERVER_HOST=0.0.0.0` inside the network; it is not exposed directly.
-- Nginx listens on host port `${PROXY_HOST_PORT}` (default 80) and proxies to `api:3001`.
+- Nginx listens on host port `${PROXY_HOST_PORT}` (default 80) and proxies to `api:${SERVER_PORT}`.
 - Sensitive endpoints `/config` and `/info` are allowlisted to `127.0.0.1` by default in `infra/compose/nginx.conf`.
 - For production, front Nginx with TLS (LB or certbot) and restrict access as needed.
