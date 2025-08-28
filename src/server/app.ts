@@ -53,9 +53,9 @@ export const start = async () => {
       chainOk = false;
     }
     return {
-      ok: true,
+      ok: schedulerRunning && chainOk,
       data: {
-        service: { version: '0.1.0', uptimeSec: Math.floor(process.uptime()) },
+        service: { version: '0.1.1', uptimeSec: Math.floor(process.uptime()) },
         db: { ok: true },
         chain: { connected: chainOk, head },
         scheduler: { running: schedulerRunning, currentPeriod },
@@ -214,8 +214,8 @@ export const start = async () => {
     };
   });
 
-  const port = loadConfig().SERVER_PORT;
-  await app.listen({ port, host: '0.0.0.0' });
+  const { SERVER_HOST: host, SERVER_PORT: port } = loadConfig();
+  await app.listen({ port, host });
 };
 
 // Start when invoked via yarn serve

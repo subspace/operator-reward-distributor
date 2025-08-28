@@ -10,7 +10,9 @@ const schema = z.object({
   CHAIN_WS: z.string().min(1),
   CHAIN_ID: z.string().min(1),
   INTERVAL_SECONDS: z.coerce.number().int().positive(),
+  SERVER_HOST: z.string().default('127.0.0.1'),
   SERVER_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
+  SCHEDULER_HOST: z.string().default('127.0.0.1'),
   SCHEDULER_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   SCHEDULER_HEALTH_URL: z.string().url().optional(),
   TIP_AI3: z.string().transform((s, ctx) => {
@@ -42,7 +44,9 @@ export interface AppConfig {
   CHAIN_WS: string;
   CHAIN_ID: string;
   INTERVAL_SECONDS: number;
+  SERVER_HOST: string;
   SERVER_PORT: number;
+  SCHEDULER_HOST: string;
   SCHEDULER_PORT: number;
   SCHEDULER_HEALTH_URL: string;
   TIP_SHANNONS: bigint;
@@ -85,7 +89,9 @@ export const loadConfig = (): AppConfig => {
     CHAIN_WS: env.CHAIN_WS,
     CHAIN_ID: env.CHAIN_ID,
     INTERVAL_SECONDS: env.INTERVAL_SECONDS,
+    SERVER_HOST: env.SERVER_HOST,
     SERVER_PORT: env.SERVER_PORT,
+    SCHEDULER_HOST: env.SCHEDULER_HOST,
     SCHEDULER_PORT: env.SCHEDULER_PORT,
     SCHEDULER_HEALTH_URL: schedulerHealthUrl,
     TIP_SHANNONS: env.TIP_AI3,
