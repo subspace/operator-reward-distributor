@@ -63,3 +63,31 @@ docker compose -f infra/compose/docker-compose.yml down
 ```
 
 To remove persisted SQLite data as well, add `-v` (careful: destructive).
+
+### Run with built-in Nginx proxy (local)
+
+1. Copy env and adjust values
+
+```bash
+cp infra/compose/.env.example infra/compose/.env
+# edit CHAIN_WS, ACCOUNT_PRIVATE_KEY, TIP_AI3, DAILY_CAP_AI3, etc.
+```
+
+2. Start stack (scheduler + api + proxy)
+
+```bash
+docker compose -f infra/compose/docker-compose.yml up -d --build
+```
+
+3. Verify
+
+```bash
+curl -s http://127.0.0.1:${PROXY_HOST_PORT:-80}/health | jq .
+```
+
+Notes:
+
+- API service binds to `SERVER_HOST=0.0.0.0` inside the network; it is not exposed directly.
+- Nginx listens on host port `${PROXY_HOST_PORT}` (default 80) and proxies to `api:3001`.
+- Sensitive endpoints `/config` and `/info` are allowlisted to `127.0.0.1` by default in `infra/compose/nginx.conf`.
+- For production, front Nginx with TLS (LB or certbot) and restrict access as needed.
