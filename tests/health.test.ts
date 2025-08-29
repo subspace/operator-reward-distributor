@@ -17,6 +17,11 @@ vi.mock('../src/chain/api.js', () => ({
   getApi: vi.fn(),
 }));
 
+// Mock wallet signer
+vi.mock('../src/wallet/signer.js', () => ({
+  getSigner: vi.fn(),
+}));
+
 // Mock database connection and queries
 vi.mock('../src/db/connection.js', async (orig) => {
   (await (orig as any).default?.()) ?? {};
@@ -79,6 +84,65 @@ const insertEmission = async (data: {
   );
 };
 
+// Helper to mock wallet balance
+const mockWalletBalance = async (balanceShannons: bigint) => {
+  const { getSigner } = await import('../src/wallet/signer.js');
+  vi.mocked(getSigner).mockReturnValue({
+    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+    addressRaw: new Uint8Array(),
+    meta: {},
+    isLocked: false,
+    publicKey: new Uint8Array(),
+    type: 'ethereum',
+  } as any);
+
+  return {
+    query: {
+      system: {
+        account: vi.fn().mockResolvedValue({
+          data: {
+            free: {
+              toBigInt: () => balanceShannons,
+            },
+          },
+        }),
+      },
+    },
+  };
+};
+
+// Shared test helpers
+const mockSuccessfulChain = async (blockNumber = 12345) => {
+  const { getApi } = await import('../src/chain/api.js');
+  vi.mocked(getApi).mockResolvedValue({
+    rpc: {
+      chain: {
+        getHeader: () => ({
+          number: { toNumber: () => blockNumber },
+        }),
+      },
+    },
+  } as any);
+};
+
+const mockSuccessfulWallet = async (daysWorth = 10) => {
+  const dailyCost = 1_000_000_000_000_000_000n * BigInt(Math.floor((24 * 60 * 60) / 180));
+  const balance = (dailyCost * BigInt(Math.floor(daysWorth * 1000))) / 1000n; // Handle decimal days
+
+  const { getApi } = await import('../src/chain/api.js');
+  const currentMock = vi.mocked(getApi).getMockImplementation();
+
+  vi.mocked(getApi).mockResolvedValue({
+    ...(currentMock ? await currentMock() : {}),
+    ...(await mockWalletBalance(balance)),
+  } as any);
+};
+
+const mockFailedChain = async () => {
+  const { getApi } = await import('../src/chain/api.js');
+  vi.mocked(getApi).mockRejectedValue(new Error('Chain connection failed'));
+};
+
 describe('health endpoint', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -86,6 +150,9 @@ describe('health endpoint', () => {
     const { getDb } = await import('../src/db/connection.js');
     const db = getDb();
     db.exec('DELETE FROM emissions');
+
+    // Default successful scheduler
+    global.fetch = vi.fn().mockResolvedValue({ ok: true });
   });
 
   describe('probeScheduler', () => {
@@ -130,23 +197,9 @@ describe('health endpoint', () => {
   });
 
   describe('getHealthSnapshot', () => {
-    beforeEach(() => {
-      // Mock successful scheduler probe by default
-      global.fetch = vi.fn().mockResolvedValue({ ok: true });
-    });
-
     it('returns healthy status when all systems are ok', async () => {
-      // Mock successful chain API
-      const { getApi } = await import('../src/chain/api.js');
-      vi.mocked(getApi).mockResolvedValue({
-        rpc: {
-          chain: {
-            getHeader: () => ({
-              number: { toNumber: () => 12345 },
-            }),
-          },
-        },
-      } as any);
+      await mockSuccessfulChain();
+      await mockSuccessfulWallet();
 
       // Insert recent emission (not late)
       const recentTime = new Date(Date.now() - 60 * 1000).toISOString(); // 1 minute ago
@@ -174,23 +227,17 @@ describe('health endpoint', () => {
         isLate: false,
       });
       expect(result.data.emissionInfo?.nextExpectedAt).toBeTruthy();
+      expect(result.data.walletInfo.walletOk).toBe(true);
+      expect(result.data.walletInfo.daysRemaining).toBeGreaterThan(3);
+      expect(result.data.walletInfo.isLowBalance).toBe(false);
+      expect(result.data.walletInfo.balanceAi3).toBeTruthy();
+      expect(result.data.walletInfo.dailyCostAi3).toBeTruthy();
     });
 
     it('returns unhealthy when scheduler is down', async () => {
-      // Mock failed scheduler probe
       global.fetch = vi.fn().mockResolvedValue({ ok: false });
-
-      // Mock successful chain API
-      const { getApi } = await import('../src/chain/api.js');
-      vi.mocked(getApi).mockResolvedValue({
-        rpc: {
-          chain: {
-            getHeader: () => ({
-              number: { toNumber: () => 12345 },
-            }),
-          },
-        },
-      } as any);
+      await mockSuccessfulChain();
+      await mockSuccessfulWallet();
 
       const result = await getHealthSnapshot();
 
@@ -199,9 +246,7 @@ describe('health endpoint', () => {
     });
 
     it('returns unhealthy when chain is down', async () => {
-      // Mock failed chain API
-      const { getApi } = await import('../src/chain/api.js');
-      vi.mocked(getApi).mockRejectedValue(new Error('Chain connection failed'));
+      await mockFailedChain();
 
       const result = await getHealthSnapshot();
 
@@ -211,17 +256,8 @@ describe('health endpoint', () => {
     });
 
     it('returns unhealthy when emissions are late', async () => {
-      // Mock successful chain and scheduler
-      const { getApi } = await import('../src/chain/api.js');
-      vi.mocked(getApi).mockResolvedValue({
-        rpc: {
-          chain: {
-            getHeader: () => ({
-              number: { toNumber: () => 12345 },
-            }),
-          },
-        },
-      } as any);
+      await mockSuccessfulChain();
+      await mockSuccessfulWallet();
 
       // Insert old emission (should be late)
       // Late threshold calculation: nextExpectedAt + (INTERVAL_SECONDS * 1000 * LATE_THRESHOLD_FACTOR)
@@ -239,34 +275,22 @@ describe('health endpoint', () => {
       const result = await getHealthSnapshot();
 
       expect(result.ok).toBe(false);
-      expect(result.data.emissionInfo?.isLate).toBe(true);
+      expect(result.data.emissionInfo.emissionsOk).toBe(false);
     });
 
     it('handles no emissions gracefully', async () => {
-      // Mock successful chain and scheduler
-      const { getApi } = await import('../src/chain/api.js');
-      vi.mocked(getApi).mockResolvedValue({
-        rpc: {
-          chain: {
-            getHeader: () => ({
-              number: { toNumber: () => 12345 },
-            }),
-          },
-        },
-      } as any);
+      await mockSuccessfulChain();
+      await mockSuccessfulWallet();
 
       const result = await getHealthSnapshot();
 
       expect(result.ok).toBe(true); // No emissions is not considered unhealthy
-      expect(result.data.emissionInfo).toBe(null);
+      expect(result.data.emissionInfo.emissionsOk).toBe(true);
     });
 
     it('calculates nextExpectedAt correctly', async () => {
-      // Mock successful systems
-      const { getApi } = await import('../src/chain/api.js');
-      vi.mocked(getApi).mockResolvedValue({
-        rpc: { chain: { getHeader: () => ({ number: { toNumber: () => 12345 } }) } },
-      } as any);
+      await mockSuccessfulChain();
+      await mockSuccessfulWallet();
 
       const baseTime = new Date('2025-08-29T19:23:26.000Z');
       await insertEmission({
@@ -283,11 +307,8 @@ describe('health endpoint', () => {
     });
 
     it('determines late status correctly', async () => {
-      // Mock successful systems
-      const { getApi } = await import('../src/chain/api.js');
-      vi.mocked(getApi).mockResolvedValue({
-        rpc: { chain: { getHeader: () => ({ number: { toNumber: () => 12345 } }) } },
-      } as any);
+      await mockSuccessfulChain();
+      await mockSuccessfulWallet();
 
       // Emission from 4 minutes ago (240 seconds)
       // Late threshold = 180 + (180 * 0.5) = 180 + 90 = 270 seconds
@@ -300,7 +321,7 @@ describe('health endpoint', () => {
       });
 
       const result = await getHealthSnapshot();
-      expect(result.data.emissionInfo?.isLate).toBe(false);
+      expect(result.data.emissionInfo.emissionsOk).toBe(true);
 
       // Clear and test with actually late emission
       const { getDb } = await import('../src/db/connection.js');
@@ -315,20 +336,70 @@ describe('health endpoint', () => {
       });
 
       const lateResult = await getHealthSnapshot();
-      expect(lateResult.data.emissionInfo?.isLate).toBe(true);
+      expect(lateResult.data.emissionInfo.emissionsOk).toBe(false);
       expect(lateResult.ok).toBe(false);
     });
 
     it('includes service uptime', async () => {
-      const { getApi } = await import('../src/chain/api.js');
-      vi.mocked(getApi).mockResolvedValue({
-        rpc: { chain: { getHeader: () => ({ number: { toNumber: () => 12345 } }) } },
-      } as any);
+      await mockSuccessfulChain();
+      await mockSuccessfulWallet();
 
       const result = await getHealthSnapshot();
 
       expect(result.data.service.uptimeSec).toBeTypeOf('number');
       expect(result.data.service.uptimeSec).toBeGreaterThanOrEqual(0);
+    });
+
+    it('returns unhealthy when wallet balance is low', async () => {
+      await mockSuccessfulChain();
+      await mockSuccessfulWallet(2.5); // 2.5 days worth (less than 3 day threshold)
+
+      const result = await getHealthSnapshot();
+
+      expect(result.ok).toBe(false);
+      expect(result.data.walletInfo.walletOk).toBe(false);
+      expect(result.data.walletInfo.isLowBalance).toBe(true);
+      expect(result.data.walletInfo.daysRemaining).toBeLessThan(3);
+      expect(result.data.walletInfo.address).toBe(
+        '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+      );
+    });
+
+    it('returns unhealthy when wallet query fails', async () => {
+      await mockSuccessfulChain();
+
+      // Mock wallet query failure
+      const { getApi } = await import('../src/chain/api.js');
+      const currentMock = vi.mocked(getApi).getMockImplementation();
+      vi.mocked(getApi).mockResolvedValue({
+        ...(currentMock ? await currentMock() : {}),
+        query: {
+          system: {
+            account: vi.fn().mockRejectedValue(new Error('Account query failed')),
+          },
+        },
+      } as any);
+
+      const result = await getHealthSnapshot();
+
+      expect(result.ok).toBe(false);
+      expect(result.data.walletInfo.walletOk).toBe(false);
+      expect(result.data.walletInfo.error).toBe('Account query failed');
+    });
+
+    it('calculates wallet days remaining correctly', async () => {
+      await mockSuccessfulChain();
+      await mockSuccessfulWallet(3); // Exactly 3 days worth
+
+      const result = await getHealthSnapshot();
+
+      expect(result.data.walletInfo.daysRemaining).toBe(3.0);
+      expect(result.data.walletInfo.walletOk).toBe(true); // 3 days >= 3 day threshold
+      expect(result.data.walletInfo.balanceAi3).toBeTruthy();
+      expect(result.data.walletInfo.dailyCostAi3).toBeTruthy();
+      // Verify AI3 values are properly formatted (should be numeric strings)
+      expect(parseFloat(result.data.walletInfo.balanceAi3!)).toBeGreaterThan(0);
+      expect(parseFloat(result.data.walletInfo.dailyCostAi3!)).toBeGreaterThan(0);
     });
   });
 });
