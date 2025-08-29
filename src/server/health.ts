@@ -1,7 +1,15 @@
 import { getApi } from '../chain/api.js';
 import { loadConfig } from '../config.js';
-import { computePeriodId } from '../scheduler/period.js';
-import { getOnChainTimestampMs } from '../scheduler/period.js';
+
+const getChainInfo = async () => {
+  try {
+    const api = await getApi();
+    const header = await api.rpc.chain.getHeader();
+    return { chainOk: true, head: header.number.toNumber() };
+  } catch {
+    return { chainOk: false, head: null };
+  }
+};
 
 export const probeScheduler = async (): Promise<boolean> => {
   const cfg = loadConfig();
@@ -18,27 +26,15 @@ export const probeScheduler = async (): Promise<boolean> => {
 };
 
 export const getHealthSnapshot = async () => {
-  const cfg = loadConfig();
-  let head: number | null = null;
-  let chainOk = false;
-  let currentPeriod: number | null = null;
   const schedulerRunning = await probeScheduler();
-  try {
-    const api = await getApi();
-    const header = await api.rpc.chain.getHeader();
-    head = header.number.toNumber();
-    const tsMs = await getOnChainTimestampMs(api);
-    currentPeriod = computePeriodId(tsMs, cfg.INTERVAL_SECONDS);
-    chainOk = true;
-  } catch {
-    chainOk = false;
-  }
+  const chain = await getChainInfo();
+
   return {
-    ok: schedulerRunning && chainOk,
+    ok: schedulerRunning && chain.chainOk,
     data: {
       service: { uptimeSec: Math.floor(process.uptime()) },
-      chain: { connected: chainOk, head },
-      scheduler: { running: schedulerRunning, currentPeriod },
+      chain,
+      scheduler: { running: schedulerRunning },
     },
   };
 };
