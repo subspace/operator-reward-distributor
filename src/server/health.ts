@@ -1,5 +1,6 @@
 import { getApi } from '../chain/api.js';
 import { loadConfig } from '../config.js';
+import { getLastEmission } from '../db/queries.js';
 
 const getChainInfo = async () => {
   try {
@@ -9,6 +10,28 @@ const getChainInfo = async () => {
   } catch {
     return { chainOk: false, head: null };
   }
+};
+
+const getLastEmissionInfo = () => {
+  const { INTERVAL_SECONDS } = loadConfig();
+  const LATE_THRESHOLD_FACTOR = 0.5;
+  const lastEmission = getLastEmission();
+  const nextExpectedAt = lastEmission?.emitted_at
+    ? new Date(lastEmission.emitted_at).getTime() + INTERVAL_SECONDS * 1000
+    : null;
+  const emissionIsLate =
+    nextExpectedAt && Date.now() > nextExpectedAt + INTERVAL_SECONDS * 1000 * LATE_THRESHOLD_FACTOR;
+  const emissionInfo = lastEmission
+    ? {
+        lastEmittedAt: lastEmission.emitted_at,
+        lastExtrinsicHash: lastEmission.extrinsic_hash,
+        lastBlockHash: lastEmission.block_hash,
+        lastBlockNumber: lastEmission.block_number,
+        nextExpectedAt: nextExpectedAt ? new Date(nextExpectedAt).toISOString() : null,
+        isLate: emissionIsLate,
+      }
+    : null;
+  return emissionInfo;
 };
 
 export const probeScheduler = async (): Promise<boolean> => {
@@ -28,13 +51,15 @@ export const probeScheduler = async (): Promise<boolean> => {
 export const getHealthSnapshot = async () => {
   const schedulerRunning = await probeScheduler();
   const chain = await getChainInfo();
+  const emissionInfo = getLastEmissionInfo();
 
   return {
-    ok: schedulerRunning && chain.chainOk,
+    ok: schedulerRunning && chain.chainOk && !emissionInfo?.isLate,
     data: {
       service: { uptimeSec: Math.floor(process.uptime()) },
       chain,
       scheduler: { running: schedulerRunning },
+      emissionInfo,
     },
   };
 };
