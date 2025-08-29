@@ -48,15 +48,17 @@ const getWalletInfo = async () => {
     const accountInfo = await api.query.system.account(signer.address);
     const balance = (accountInfo as any).data.free.toBigInt();
 
-    // Calculate daily emission cost
-    // Each emission costs TIP_SHANNONS, and we have INTERVAL_SECONDS between emissions
-    // So daily cost = TIP_SHANNONS * (24 * 60 * 60 / INTERVAL_SECONDS)
-    const emissionsPerDay = (24 * 60 * 60) / cfg.INTERVAL_SECONDS;
+    // Calculate daily emission cost (rounded up): ceil emissions/day
+    // emissionsPerDay = 24h / INTERVAL_SECONDS
+    const SECONDS_PER_DAY = 24 * 60 * 60;
+    const emissionsPerDay = SECONDS_PER_DAY / cfg.INTERVAL_SECONDS;
+    const emissionsPerDayCeil = Math.ceil(emissionsPerDay);
+    const dailyCost = cfg.TIP_SHANNONS * BigInt(emissionsPerDayCeil);
 
-    const dailyCost = cfg.TIP_SHANNONS * BigInt(Math.floor(emissionsPerDay));
-
-    // Calculate days remaining
-    const daysRemaining = dailyCost > 0n ? Number(balance / dailyCost) : 999;
+    // Convert to AI3 and do arithmetic using Number per accepted precision tradeoff
+    const balanceAi3Num = Number(formatShannonsToAi3(balance));
+    const dailyCostAi3Num = Number(formatShannonsToAi3(dailyCost));
+    const daysRemaining = dailyCostAi3Num > 0 ? balanceAi3Num / dailyCostAi3Num : Infinity;
     const isLowBalance = daysRemaining < LOW_BALANCE_DAYS_THRESHOLD;
 
     return {
