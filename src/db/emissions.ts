@@ -33,7 +33,7 @@ export const reserveEmissionIfNeeded = (periodId: number): boolean => {
     INSERT OR IGNORE INTO emissions (
       chain_id, period_id, scheduled_at, remark_payload, tip_shannons, status
     ) VALUES (
-      @chain_id, @period_id, datetime('now'), @remark_payload, @tip_shannons, 'scheduled'
+      @chain_id, @period_id, @scheduled_at, @remark_payload, @tip_shannons, 'scheduled'
     )
   `;
 
@@ -41,6 +41,7 @@ export const reserveEmissionIfNeeded = (periodId: number): boolean => {
   const result = stmt.run({
     chain_id: cfg.CHAIN_ID,
     period_id: periodId,
+    scheduled_at: new Date().toISOString(),
     remark_payload: '',
     tip_shannons: cfg.TIP_SHANNONS.toString(),
   });
@@ -56,10 +57,15 @@ export const updateSubmitted = (
   const db = getDb();
   const stmt = (db as Database.Database).prepare(
     `UPDATE emissions
-     SET status='submitted', emitted_at=datetime('now'), extrinsic_hash=@extrinsic_hash, remark_payload=@remark_payload
+     SET status='submitted', emitted_at=@emitted_at, extrinsic_hash=@extrinsic_hash, remark_payload=@remark_payload
      WHERE chain_id=@chain_id AND period_id=@period_id`
   );
-  stmt.run({ chain_id: cfg.CHAIN_ID, period_id: periodId, ...fields });
+  stmt.run({
+    chain_id: cfg.CHAIN_ID,
+    period_id: periodId,
+    emitted_at: new Date().toISOString(),
+    ...fields,
+  });
 };
 
 export const updateInclusion = (
@@ -81,10 +87,15 @@ export const updateConfirmed = (periodId: number, fields: { confirmation_depth: 
   const db = getDb();
   const stmt = (db as Database.Database).prepare(
     `UPDATE emissions
-     SET status='confirmed', confirmed_at=datetime('now'), confirmation_depth=@confirmation_depth
+     SET status='confirmed', confirmed_at=@confirmed_at, confirmation_depth=@confirmation_depth
      WHERE chain_id=@chain_id AND period_id=@period_id`
   );
-  stmt.run({ chain_id: cfg.CHAIN_ID, period_id: periodId, ...fields });
+  stmt.run({
+    chain_id: cfg.CHAIN_ID,
+    period_id: periodId,
+    confirmed_at: new Date().toISOString(),
+    ...fields,
+  });
 };
 
 export const recordSkipped = (periodId: number, status: 'skipped_budget'): void => {
@@ -94,12 +105,13 @@ export const recordSkipped = (periodId: number, status: 'skipped_budget'): void 
     `INSERT OR IGNORE INTO emissions (
       chain_id, period_id, scheduled_at, remark_payload, tip_shannons, status
     ) VALUES (
-      @chain_id, @period_id, datetime('now'), '', @tip_shannons, @status
+      @chain_id, @period_id, @scheduled_at, '', @tip_shannons, @status
     )`
   );
   insert.run({
     chain_id: cfg.CHAIN_ID,
     period_id: periodId,
+    scheduled_at: new Date().toISOString(),
     tip_shannons: cfg.TIP_SHANNONS.toString(),
     status,
   });
