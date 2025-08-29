@@ -9,21 +9,9 @@ import { pinoOptions, logger } from '../logger.js';
 import { computePeriodId, getOnChainTimestampMs } from '../scheduler/period.js';
 import { formatShannonsToAi3 } from '../utils/amounts.js';
 
+import { getHealthSnapshot, probeScheduler } from './health.js';
+
 const buildApp = () => Fastify({ logger: pinoOptions });
-
-const probeScheduler = async (): Promise<boolean> => {
-  const cfg = loadConfig();
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 500);
-    const res = await fetch(cfg.SCHEDULER_HEALTH_URL, { signal: controller.signal });
-    clearTimeout(timeout);
-    return res.ok;
-  } catch {
-    return false;
-  }
-};
 
 const toInt = (s: string | null, opts: { min?: number; max?: number } = {}): number | undefined => {
   if (!s || !/^\d+$/u.test(s)) return undefined;
@@ -37,30 +25,7 @@ export const start = async () => {
   const app = buildApp();
 
   app.get('/health', async () => {
-    const cfg = loadConfig();
-    let head: number | null = null;
-    let chainOk = false;
-    let currentPeriod: number | null = null;
-    const schedulerRunning = await probeScheduler();
-    try {
-      const api = await getApi();
-      const header = await api.rpc.chain.getHeader();
-      head = header.number.toNumber();
-      const tsMs = await getOnChainTimestampMs(api);
-      currentPeriod = computePeriodId(tsMs, cfg.INTERVAL_SECONDS);
-      chainOk = true;
-    } catch {
-      chainOk = false;
-    }
-    return {
-      ok: schedulerRunning && chainOk,
-      data: {
-        service: { version: '0.1.1', uptimeSec: Math.floor(process.uptime()) },
-        db: { ok: true },
-        chain: { connected: chainOk, head },
-        scheduler: { running: schedulerRunning, currentPeriod },
-      },
-    };
+    return getHealthSnapshot();
   });
 
   app.get('/info', async () => {

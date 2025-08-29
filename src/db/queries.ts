@@ -120,3 +120,18 @@ export const getEmissionByPeriod = (periodId: number): EmissionRow | undefined =
   const row = stmt.get({ chain_id: cfg.CHAIN_ID, period_id: periodId }) as EmissionRow | undefined;
   return row;
 };
+
+export const getLastEmission = (): EmissionRow | undefined => {
+  const cfg = loadConfig();
+  const db = getDb() as Database.Database;
+  const stmt = db.prepare(
+    `SELECT id, chain_id, period_id, scheduled_at, emitted_at, remark_payload, tip_shannons,
+            extrinsic_hash, block_hash, block_number, confirmation_depth, confirmed_at, status
+     FROM emissions
+     WHERE chain_id = @chain_id AND emitted_at IS NOT NULL
+     ORDER BY emitted_at DESC
+     LIMIT 1`
+  );
+  const row = stmt.get({ chain_id: cfg.CHAIN_ID }) as EmissionRow | undefined;
+  return row;
+};
