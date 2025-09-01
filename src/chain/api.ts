@@ -6,37 +6,8 @@ import { logger } from '../logger.js';
 let apiInstance: ApiPromise | null = null;
 let providerInstance: WsProvider | null = null;
 
-const cleanupApi = async (reason: string, err?: unknown): Promise<void> => {
-  try {
-    if (err) {
-      logger.warn({ err, reason }, 'cleaning up chain api due to error');
-    } else {
-      logger.info({ reason }, 'cleaning up chain api');
-    }
-    if (apiInstance) {
-      try {
-        await apiInstance.disconnect();
-      } catch (e) {
-        logger.warn({ err: e }, 'error disconnecting ApiPromise');
-      }
-    }
-    if (providerInstance) {
-      try {
-        await providerInstance.disconnect();
-      } catch (e) {
-        logger.warn({ err: e }, 'error disconnecting WsProvider');
-      }
-    }
-  } finally {
-    apiInstance = null;
-    providerInstance = null;
-  }
-};
-
-export const getApi = async (): Promise<ApiPromise> => {
-  if (apiInstance && apiInstance.isConnected) {
-    return apiInstance;
-  }
+const getOrCreateProvider = (): WsProvider => {
+  if (providerInstance) return providerInstance;
 
   const cfg = loadConfig();
   const provider = new WsProvider(cfg.rpcEndpoints);
@@ -44,29 +15,62 @@ export const getApi = async (): Promise<ApiPromise> => {
 
   provider.on('connected', () => {
     logger.info({ endpoints: cfg.rpcEndpoints }, 'chain connected');
+    logger.info({ connectedEndpoint: provider.endpoint }, 'connected endpoint');
   });
+
   provider.on('disconnected', () => {
     logger.warn('chain disconnected');
-    void cleanupApi('provider_disconnected');
+    // Do not tear down; allow WsProvider to auto-rotate/retry
   });
+
   provider.on('error', (err) => {
     logger.error({ err }, 'chain provider error');
-    void cleanupApi('provider_error', err);
+    // Do not tear down; allow WsProvider to auto-rotate/retry
   });
 
-  const api = await ApiPromise.create({ provider });
-  await api.isReadyOrError;
+  return providerInstance;
+};
 
-  api.on('error', (err) => {
-    logger.error({ err }, 'chain api error');
-    void cleanupApi('api_error', err);
-  });
+export const getApi = async (): Promise<ApiPromise> => {
+  if (apiInstance && apiInstance.isConnected) {
+    return apiInstance;
+  }
 
-  logger.info('chain api ready');
-  apiInstance = api;
+  const provider = getOrCreateProvider();
+
+  if (!apiInstance) {
+    apiInstance = await ApiPromise.create({ provider });
+
+    apiInstance.on('error', (err) => {
+      logger.error({ err }, 'chain api error');
+      // Keep provider alive; ApiPromise will recover when provider reconnects
+    });
+
+    await apiInstance.isReadyOrError;
+    logger.info('chain api ready');
+  }
+
   return apiInstance;
 };
 
 export const disconnectApi = async (): Promise<void> => {
-  await cleanupApi('manual_disconnect');
+  if (apiInstance) {
+    try {
+      await apiInstance.disconnect();
+    } catch (e) {
+      logger.warn({ err: e }, 'error disconnecting ApiPromise');
+    } finally {
+      apiInstance = null;
+    }
+  }
+
+  if (providerInstance) {
+    try {
+      await providerInstance.disconnect();
+    } catch (e) {
+      logger.warn({ err: e }, 'error disconnecting WsProvider');
+    } finally {
+      providerInstance = null;
+    }
+  }
 };
