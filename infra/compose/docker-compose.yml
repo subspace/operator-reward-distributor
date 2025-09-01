@@ -35,7 +35,7 @@ services:
       [
         'run',
         '--chain',
-        '${NETWORK_ID}',
+        '${NETWORK_ID:-mainnet}',
         '--base-path',
         '/var/subspace',
         '--',

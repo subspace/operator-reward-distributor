@@ -5,7 +5,6 @@ This directory contains deployment artifacts and instructions for running Operat
 ### Structure
 
 - `compose/` — Docker Compose deployment (local node, scheduler, API)
-- `systemd/` — Reserved for native/systemd unit files (optional)
 
 The runnable artifacts live under `infra/compose/`.
 
@@ -62,8 +61,6 @@ docker compose -f infra/compose/docker-compose.yml up -d --build
 docker compose -f infra/compose/docker-compose.yml down
 ```
 
-To remove persisted SQLite data as well, add `-v` (careful: destructive).
-
 ### Run with built-in Nginx proxy (local)
 
 1. Copy env and adjust values
@@ -91,3 +88,37 @@ Notes:
 - Nginx listens on host port `${PROXY_HOST_PORT}` (default 80) and proxies to `api:${SERVER_PORT}`.
 - Sensitive endpoints `/config` and `/info` are allowlisted to `127.0.0.1` by default in `infra/compose/nginx.conf`.
 - For production, front Nginx with TLS (LB or certbot) and restrict access as needed.
+
+### Run with local-node profile (embedded node)
+
+1. Copy env and adjust values
+
+```bash
+cp infra/compose/.env.example infra/compose/.env
+# edit NODE_DOCKER_TAG, NETWORK_ID (and optionally DOMAIN_ID)
+# set ACCOUNT_PRIVATE_KEY, TIP_AI3, DAILY_CAP_AI3, etc.
+```
+
+2. Start stack with local node enabled
+
+```bash
+docker compose -f infra/compose/docker-compose.yml --profile local-node up -d --build
+```
+
+3. Verify
+
+```bash
+# API via Nginx proxy
+curl -s http://127.0.0.1:${PROXY_HOST_PORT:-80}/health | jq .
+
+# Optional: check embedded node JSON-RPC directly
+curl -s -H 'Content-Type: application/json' \
+  -d '{"id":1,"jsonrpc":"2.0","method":"system_health","params":[]}' \
+  http://127.0.0.1:9944/ | jq .
+```
+
+Notes:
+
+- The `node` service is only started when the `local-node` profile is used.
+- `.env.example` sets `CHAIN_WS=ws://node:9944,...` so the app talks to the embedded node by default.
+- Node RPC ports are forwarded to the host at `127.0.0.1:9944` and `127.0.0.1:8944` (see `docker-compose.yml`).
