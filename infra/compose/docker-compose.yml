@@ -31,13 +31,14 @@ services:
     restart: unless-stopped
     volumes:
       - node_data:/var/subspace:rw
-    command:
-      [
+    command: [
         'run',
         '--chain',
         '${NETWORK_ID:-mainnet}',
         '--base-path',
         '/var/subspace',
+        '--sync',
+        'full', # On initial sync "snap" sync can be used. Once https://github.com/autonomys/subspace/issues/3555 is fixed, we can remove this flag, as the default "snap" sync will always work
         '--',
         '--domain-id',
         '${DOMAIN_ID:-0}',

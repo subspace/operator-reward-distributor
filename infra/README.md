@@ -43,17 +43,28 @@ docker compose -f infra/compose/docker-compose.yml logs -f ord-api ord-scheduler
 - App variables are documented in `src/config.ts`. Compose reads `infra/compose/.env` via `env_file`.
 - Root `.env.example` is for local development (`yarn dev`/`yarn serve`) and is not used by Compose.
 - Set `NODE_DOCKER_TAG`, `NETWORK_ID`, and (optionally) `DOMAIN_ID` in `infra/compose/.env`. Compose uses `${DOMAIN_ID:-0}` to default the domain id to 0 if unset. Adjust node flags in `infra/compose/docker-compose.yml` as needed.
-- Conditional local node: the `node` service is under the `local-node` profile. To run with a local node, pass the profile:
+- Conditional local node: the `node` service is under the `local-node` profile. To run with a local node, use the local-node override (adds `scheduler -> node` health dependency) and pass the profile:
+
+````bash
+docker compose \
+  -f infra/compose/docker-compose.yml \
+  -f infra/compose/docker-compose.local-node.yml \
+  --profile local-node up -d --build
+
+Alternatively, set the files once in your shell:
 
 ```bash
-docker compose -f infra/compose/docker-compose.yml --profile local-node up -d --build
-```
+export COMPOSE_FILE=infra/compose/docker-compose.yml:infra/compose/docker-compose.local-node.yml
+docker compose --profile local-node up -d --build
+````
+
+````
 
 ### Upgrades
 
 ```bash
 docker compose -f infra/compose/docker-compose.yml up -d --build
-```
+````
 
 ### Shutdown
 
@@ -99,10 +110,13 @@ cp infra/compose/.env.example infra/compose/.env
 # set ACCOUNT_PRIVATE_KEY, TIP_AI3, DAILY_CAP_AI3, etc.
 ```
 
-2. Start stack with local node enabled
+2. Start stack with local node enabled (base + override)
 
 ```bash
-docker compose -f infra/compose/docker-compose.yml --profile local-node up -d --build
+docker compose \
+  -f infra/compose/docker-compose.yml \
+  -f infra/compose/docker-compose.local-node.yml \
+  --profile local-node up -d --build
 ```
 
 3. Verify
@@ -120,5 +134,6 @@ curl -s -H 'Content-Type: application/json' \
 Notes:
 
 - The `node` service is only started when the `local-node` profile is used.
-- `.env.example` sets `CHAIN_WS=ws://node:9944,...` so the app talks to the embedded node by default.
-- Node RPC ports are forwarded to the host at `127.0.0.1:9944` and `127.0.0.1:8944` (see `docker-compose.yml`).
+- The local-node override (`docker-compose.local-node.yml`) makes `scheduler` wait until `node` is healthy before starting.
+- `.env.example` sets `CHAIN_WS=ws://node:8944,...` so the app uses the embedded node's WebSocket RPC by default. JSON-RPC HTTP remains at `127.0.0.1:9944` (used by the healthcheck).
+- Node RPC ports are forwarded to the host at `127.0.0.1:9944` (HTTP) and `127.0.0.1:8944` (WebSocket); see `docker-compose.yml`.
