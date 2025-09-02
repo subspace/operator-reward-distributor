@@ -1,0 +1,5 @@
+services:
+  scheduler:
+    depends_on:
+      node:
+        condition: service_healthy
