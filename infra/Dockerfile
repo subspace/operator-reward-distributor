@@ -1,11 +1,5 @@
 # syntax=docker/dockerfile:1.7
 
-# Build arguments for metadata
-ARG VERSION=latest
-ARG BUILD_DATE
-ARG GIT_REF
-ARG GIT_SHA
-
 FROM node:20-alpine AS builder
 WORKDIR /app
 
@@ -29,19 +23,6 @@ RUN yarn build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
-
-# Build metadata labels
-ARG VERSION=latest
-ARG BUILD_DATE
-ARG GIT_REF
-ARG GIT_SHA
-
-LABEL org.opencontainers.image.title="operator-reward-distributor" \
-      org.opencontainers.image.description="Operator Reward Distributor for Autonomys Network" \
-      org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${GIT_SHA}" \
-      org.opencontainers.image.source="https://github.com/autonomys/operator-reward-distributor"
 
 ENV NODE_ENV=production
 
