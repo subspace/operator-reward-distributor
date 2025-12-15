@@ -1,5 +1,5 @@
 x-app-build: &app-build
-  context: ../..
+  context: ..
   dockerfile: infra/Dockerfile
 
 name: ord
