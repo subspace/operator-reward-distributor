@@ -1,6 +1,6 @@
 x-app-build: &app-build
   context: ../..
-  dockerfile: infra/compose/Dockerfile
+  dockerfile: infra/Dockerfile
 
 name: ord
 
@@ -62,8 +62,9 @@ services:
       - ord
 
   scheduler:
+    # Use pre-built image from registry if APP_IMAGE is set, otherwise build locally
+    image: ${APP_IMAGE:-ord-app:latest}
     build: *app-build
-    image: ord-app:latest
     command: ['sh', '-lc', 'node dist/index.js']
     env_file:
       - ./.env
@@ -85,8 +86,9 @@ services:
       - ord
 
   api:
+    # Use pre-built image from registry if APP_IMAGE is set, otherwise build locally
+    image: ${APP_IMAGE:-ord-app:latest}
     build: *app-build
-    image: ord-app:latest
     command: ['sh', '-lc', 'node dist/server/app.js']
     env_file:
       - ./.env
