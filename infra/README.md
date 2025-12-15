@@ -12,6 +12,50 @@ The runnable artifacts live under `infra/compose/`.
 
 - Docker and Docker Compose plugin installed
 
+### Building Docker Images with GitHub Actions
+
+The repository includes a GitHub Actions workflow (`.github/workflows/docker-build.yml`) that can build Docker images from any branch.
+
+#### Using GitHub Actions UI
+
+1. Go to the **Actions** tab in your GitHub repository
+2. Select **Build Docker Image** workflow
+3. Click **Run workflow**
+4. Choose the branch to build from
+5. Optionally:
+   - Enable **Push image to registry** to push to GitHub Container Registry
+   - Set a custom **Image tag** (defaults to branch name)
+6. Click **Run workflow**
+
+#### Using Pre-built Images
+
+After building an image via GitHub Actions, you can use it in your deployment:
+
+1. Set `APP_IMAGE` in `infra/compose/.env`:
+
+```bash
+APP_IMAGE=ghcr.io/autonomys/operator-reward-distributor:main
+```
+
+2. Pull and start the stack (no build needed):
+
+```bash
+docker compose -f infra/compose/docker-compose.yml pull
+docker compose -f infra/compose/docker-compose.yml up -d
+```
+
+**Note:** When `APP_IMAGE` is set, docker-compose will use the pre-built image and skip local builds. Leave `APP_IMAGE` unset to build from source locally.
+
+#### Image Tags
+
+Images are tagged with:
+
+- Branch name (e.g., `main`, `develop`)
+- Commit SHA with branch prefix (e.g., `main-abc1234`)
+- Custom tag if specified in workflow dispatch
+
+Images are pushed to: `ghcr.io/autonomys/operator-reward-distributor`
+
 ### Quick start (Docker Compose)
 
 1. Copy and edit environment:
@@ -42,6 +86,7 @@ docker compose -f infra/compose/docker-compose.yml logs -f ord-api ord-scheduler
 
 - App variables are documented in `src/config.ts`. Compose reads `infra/compose/.env` via `env_file`.
 - Root `.env.example` is for local development (`yarn dev`/`yarn serve`) and is not used by Compose.
+- Set `APP_IMAGE` in `infra/compose/.env` to use a pre-built image from registry (e.g., from GitHub Actions). Leave unset to build locally.
 - Set `NODE_DOCKER_TAG`, `NETWORK_ID`, and (optionally) `DOMAIN_ID` in `infra/compose/.env`. Compose uses `${DOMAIN_ID:-0}` to default the domain id to 0 if unset. Adjust node flags in `infra/compose/docker-compose.yml` as needed.
 - Conditional local node: the `node` service is under the `local-node` profile. To run with a local node, use the local-node override (adds `scheduler -> node` health dependency) and pass the profile:
 
